@@ -26,7 +26,7 @@ from kivymd.uix.label import MDLabel
 from kivymd.uix.textfield import MDTextField, MDTextFieldHintText
 from kivymd.uix.screen import MDScreen
 
-from request_service import RequestService, STATUS_LABELS, WORKERS
+from request_service import RequestService, STATUS_LABELS
 
 FOREST = "#173E31"
 MUTED = "#49564E"
@@ -305,6 +305,42 @@ class RamaMobileApp(MDApp):
         screen.ids.pending_count.text = str(pending)
         screen.ids.assign_count.text = str(waiting)
         screen.ids.active_count.text = str(active)
+        worker_container = screen.ids.admin_workers
+        worker_container.clear_widgets()
+        workers = self.service.list_workers()
+        if not workers:
+            worker_container.add_widget(self._label(
+                "No hay trabajadores registrados.", size=14,
+                color_hex=MUTED, height=dp(32),
+            ))
+        for worker in workers:
+            worker_card = MDCard(
+                style="outlined", orientation="vertical", padding=dp(10),
+                spacing=dp(4), size_hint_y=None, height=dp(112),
+            )
+            worker_card.add_widget(self._label(
+                worker["name"], size=15, height=dp(24), bold=True,
+            ))
+            worker_card.add_widget(self._label(
+                f"Usuario: {worker['username']}", size=13,
+                color_hex=MUTED, height=dp(20),
+            ))
+            actions = MDBoxLayout(
+                orientation="horizontal", spacing=dp(8),
+                size_hint_y=None, height=dp(40),
+            )
+            actions.add_widget(self._button(
+                "Editar",
+                lambda account=worker: self._show_worker_dialog(account),
+                style="tonal",
+            ))
+            actions.add_widget(self._button(
+                "Eliminar",
+                lambda account=worker: self._confirm_delete_worker(account),
+                style="text",
+            ))
+            worker_card.add_widget(actions)
+            worker_container.add_widget(worker_card)
         for status, heading in (
             ("submitted", "Por revisar"),
             ("accepted", "Aceptadas · asignar trabajador"),
@@ -410,7 +446,7 @@ class RamaMobileApp(MDApp):
             ))
         elif admin_actions and request["status"] == "accepted":
             picker = Spinner(
-                text="Selecciona trabajador", values=WORKERS,
+                text="Selecciona trabajador", values=self.service.worker_names,
                 size_hint_y=None, height=dp(48),
                 background_normal="", background_color=(0.95, 0.96, 0.94, 1),
                 color=(0.11, 0.24, 0.19, 1), font_size=dp(14),
@@ -471,6 +507,100 @@ class RamaMobileApp(MDApp):
             dialog, request_id, reason_field.text,
         ))
         dialog.open()
+
+    def _show_worker_dialog(self, worker: dict[str, str] | None = None) -> None:
+        if not self.current_user or self.current_user["role"] != "admin":
+            return
+        username_field = MDTextField(
+            MDTextFieldHintText(text="Usuario"),
+            mode="outlined", size_hint_y=None, height=dp(62),
+            text=worker["username"] if worker else "",
+        )
+        name_field = MDTextField(
+            MDTextFieldHintText(text="Nombre completo"),
+            mode="outlined", size_hint_y=None, height=dp(62),
+            text=worker["name"] if worker else "",
+        )
+        password_field = MDTextField(
+            MDTextFieldHintText(
+                text="Nueva contraseña (opcional)" if worker
+                else "Contraseña (mínimo 6 caracteres)"
+            ),
+            mode="outlined", size_hint_y=None, height=dp(62), password=True,
+        )
+        cancel_button = MDButton(MDButtonText(text="Cancelar"), style="text")
+        save_button = MDButton(MDButtonText(text="Guardar"), style="filled")
+        content = MDDialogContentContainer(
+            username_field, name_field, password_field,
+            orientation="vertical", padding=(dp(16), dp(8)),
+        )
+        dialog = MDDialog(
+            MDDialogHeadlineText(
+                text="Editar trabajador" if worker else "Agregar trabajador"
+            ),
+            MDDialogSupportingText(
+                text="Deja la contraseña vacía para conservar la actual."
+                if worker else "Crea el acceso para el trabajador."
+            ),
+            content,
+            MDDialogButtonContainer(
+                Widget(), cancel_button, save_button, spacing=dp(8),
+            ),
+        )
+        cancel_button.bind(on_release=lambda *_args: dialog.dismiss())
+        save_button.bind(on_release=lambda *_args: self._save_worker(
+            dialog, worker, username_field.text, name_field.text,
+            password_field.text,
+        ))
+        dialog.open()
+
+    def _save_worker(self, dialog, worker: dict[str, str] | None,
+                     username: str, name: str, password: str) -> None:
+        try:
+            if worker:
+                self.service.update_worker(
+                    worker["username"], username=username,
+                    name=name, password=password,
+                )
+            else:
+                self.service.create_worker(
+                    username=username, name=name, password=password,
+                )
+        except ValueError as error:
+            self._show_dialog("No se pudo guardar", str(error))
+            return
+        dialog.dismiss()
+        self.refresh_all()
+
+    def _confirm_delete_worker(self, worker: dict[str, str]) -> None:
+        if not self.current_user or self.current_user["role"] != "admin":
+            return
+        cancel_button = MDButton(MDButtonText(text="Cancelar"), style="text")
+        delete_button = MDButton(MDButtonText(text="Eliminar"), style="tonal")
+        dialog = MDDialog(
+            MDDialogHeadlineText(text="Eliminar trabajador"),
+            MDDialogSupportingText(
+                text=f"¿Quieres eliminar a {worker['name']} y su acceso?"
+            ),
+            MDDialogButtonContainer(
+                Widget(), cancel_button, delete_button, spacing=dp(8),
+            ),
+        )
+        cancel_button.bind(on_release=lambda *_args: dialog.dismiss())
+        delete_button.bind(on_release=lambda *_args: self._delete_worker(
+            dialog, worker,
+        ))
+        dialog.open()
+
+    def _delete_worker(self, dialog, worker: dict[str, str]) -> None:
+        try:
+            self.service.delete_worker(worker["username"])
+        except ValueError as error:
+            dialog.dismiss()
+            self._show_dialog("No se pudo eliminar", str(error))
+            return
+        dialog.dismiss()
+        self.refresh_all()
 
     def _save_pending_reason(self, dialog, request_id: str, reason: str) -> None:
         if len(reason.strip()) < 4:
@@ -538,9 +668,6 @@ class RamaMobileApp(MDApp):
 
     def _assign(self, request_id: str, worker: str) -> None:
         if not self.current_user or self.current_user["role"] != "admin":
-            return
-        if worker not in WORKERS:
-            self._show_dialog("Selecciona un trabajador", "Elige a una persona del equipo antes de asignar.")
             return
         self._change_status(request_id, "assigned", worker=worker)
 

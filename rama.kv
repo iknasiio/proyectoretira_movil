@@ -411,6 +411,33 @@
                             text_color: 0.29, 0.34, 0.30, 1
 
                 MDBoxLayout:
+                    orientation: "horizontal"
+                    size_hint_y: None
+                    height: dp(44)
+                    spacing: dp(8)
+                    MDLabel:
+                        text: "Equipo de trabajo"
+                        font_size: dp(17)
+                        bold: True
+                        theme_text_color: "Custom"
+                        text_color: 0.11, 0.18, 0.15, 1
+                    MDButton:
+                        style: "tonal"
+                        size_hint_x: None
+                        width: dp(178)
+                        on_release: app._show_worker_dialog()
+                        MDButtonText:
+                            text: "Agregar trabajador"
+                            font_size: dp(13)
+
+                MDBoxLayout:
+                    id: admin_workers
+                    orientation: "vertical"
+                    size_hint_y: None
+                    height: self.minimum_height
+                    spacing: dp(8)
+
+                MDBoxLayout:
                     id: admin_requests
                     orientation: "vertical"
                     size_hint_y: None

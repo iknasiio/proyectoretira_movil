@@ -72,10 +72,7 @@ class RequestServiceTests(unittest.TestCase):
             self.service.authenticate("SOFIA", "sofia123")["name"],
             "Sofía Ramírez",
         )
-        self.assertEqual(
-            self.service.recover_password("sofia"),
-            "sofia123",
-        )
+        self.assertEqual(self.service.recover_password("sofia"), "sofia123")
 
     def test_registration_rejects_duplicate_usernames(self):
         with self.assertRaises(ValueError):
@@ -85,6 +82,57 @@ class RequestServiceTests(unittest.TestCase):
                 name="Elena Another",
                 email="elena2@example.com",
                 phone="555 010 2000",
+            )
+
+    def test_admin_can_create_worker_and_worker_can_authenticate(self):
+        worker = self.service.create_worker(
+            username="  sofia ", name="Sofía Pérez", password="ramas123",
+        )
+
+        self.assertEqual(worker["username"], "sofia")
+        self.assertEqual(self.service.authenticate("SOFIA", "ramas123")["name"], "Sofía Pérez")
+        self.assertIn("Sofía Pérez", self.service.worker_names)
+
+    def test_editing_worker_updates_credentials_and_existing_assignments(self):
+        self.service.transition("RM-1048", "accepted")
+        self.service.transition("RM-1048", "assigned", worker=WORKERS[0])
+
+        self.service.update_worker(
+            "lucia", username="lucia-m", name="Lucía Méndez Rojas",
+            password="nuevo123",
+        )
+
+        self.assertIsNone(self.service.authenticate("lucia", "lucia123"))
+        self.assertEqual(
+            self.service.authenticate("lucia-m", "nuevo123")["name"],
+            "Lucía Méndez Rojas",
+        )
+        self.assertEqual(self.service.get("RM-1048")["worker"], "Lucía Méndez Rojas")
+        self.assertEqual(
+            self.service.route_for_worker("Lucía Méndez Rojas")[0]["id"],
+            "RM-1048",
+        )
+
+    def test_worker_cannot_be_deleted_with_active_requests(self):
+        with self.assertRaisesRegex(ValueError, "retiros activos"):
+            self.service.delete_worker("lucia")
+
+        self.service.delete_worker("mateo")
+
+        self.assertNotIn("Mateo Silva", self.service.worker_names)
+        self.assertIsNone(self.service.authenticate("mateo", "mateo123"))
+
+    def test_worker_creation_rejects_duplicate_usernames_and_short_passwords(self):
+        for username in ("LUCIA", "admin"):
+            with self.subTest(username=username):
+                with self.assertRaisesRegex(ValueError, "usuario"):
+                    self.service.create_worker(
+                        username=username, name="Otra persona",
+                        password="ramas123",
+                    )
+        with self.assertRaisesRegex(ValueError, "6 caracteres"):
+            self.service.create_worker(
+                username="sofia", name="Sofía Pérez", password="123",
             )
 
     def test_pending_request_requires_reason_and_can_be_resumed(self):

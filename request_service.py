@@ -96,10 +96,21 @@ class RequestService:
     def __init__(self):
         self.requests = [request.copy() for request in INITIAL_REQUESTS]
         self.accounts = [dict(account) for account in DEMO_USERS]
+        self.workers = [
+            account.copy() for account in DEMO_USERS
+            if account["role"] == "worker"
+        ]
+
+    @property
+    def worker_names(self) -> tuple[str, ...]:
+        return tuple(worker["name"] for worker in self.workers)
 
     def authenticate(self, username: str, password: str) -> dict[str, str] | None:
         normalized_username = username.strip().casefold()
-        for account in self.accounts:
+        accounts = [
+            account for account in self.accounts if account["role"] != "worker"
+        ] + self.workers
+        for account in accounts:
             if (account["username"] == normalized_username
                     and account["password"] == password):
                 return {
@@ -137,6 +148,93 @@ class RequestService:
         )
         return account["password"] if account else None
 
+    def list_workers(self) -> list[dict[str, str]]:
+        return [
+            {key: worker[key] for key in ("username", "name", "role")}
+            for worker in self.workers
+        ]
+
+    def create_worker(self, *, username: str, name: str,
+                      password: str) -> dict[str, str]:
+        normalized_username = username.strip().casefold()
+        normalized_name = name.strip()
+        if len(normalized_username) < 3 or not normalized_name:
+            raise ValueError("El usuario debe tener al menos 3 caracteres y el nombre no puede estar vacío.")
+        if len(password) < 6:
+            raise ValueError("La contraseña debe tener al menos 6 caracteres.")
+        if not self._username_is_available(normalized_username):
+            raise ValueError("Ya existe una cuenta con ese usuario.")
+        if any(worker["name"].casefold() == normalized_name.casefold()
+               for worker in self.workers):
+            raise ValueError("Ya existe un trabajador con ese nombre.")
+        worker = {
+            "username": normalized_username,
+            "password": password,
+            "name": normalized_name,
+            "role": "worker",
+        }
+        self.workers.append(worker)
+        return {key: worker[key] for key in ("username", "name", "role")}
+
+    def update_worker(self, current_username: str, *, username: str,
+                      name: str, password: str = "") -> dict[str, str]:
+        worker = self._get_worker(current_username)
+        normalized_username = username.strip().casefold()
+        normalized_name = name.strip()
+        if len(normalized_username) < 3 or not normalized_name:
+            raise ValueError("El usuario debe tener al menos 3 caracteres y el nombre no puede estar vacío.")
+        if password and len(password) < 6:
+            raise ValueError("La contraseña debe tener al menos 6 caracteres.")
+        if not self._username_is_available(normalized_username, ignore_worker=worker):
+            raise ValueError("Ya existe una cuenta con ese usuario.")
+        for other in self.workers:
+            if other is worker:
+                continue
+            if other["name"].casefold() == normalized_name.casefold():
+                raise ValueError("Ya existe un trabajador con ese nombre.")
+
+        previous_name = worker["name"]
+        worker["username"] = normalized_username
+        worker["name"] = normalized_name
+        if password:
+            worker["password"] = password
+        if previous_name != normalized_name:
+            for request in self.requests:
+                if request["worker"] == previous_name:
+                    request["worker"] = normalized_name
+        return {key: worker[key] for key in ("username", "name", "role")}
+
+    def delete_worker(self, username: str) -> None:
+        worker = self._get_worker(username)
+        active_statuses = {"assigned", "in_progress", "pending"}
+        if any(
+            request["worker"] == worker["name"]
+            and request["status"] in active_statuses
+            for request in self.requests
+        ):
+            raise ValueError("No se puede eliminar: el trabajador tiene retiros activos asignados.")
+        self.workers.remove(worker)
+
+    def _get_worker(self, username: str) -> dict[str, str]:
+        normalized_username = username.strip().casefold()
+        for worker in self.workers:
+            if worker["username"] == normalized_username:
+                return worker
+        raise ValueError("No encontramos ese trabajador.")
+
+    def _username_is_available(
+        self, username: str, *, ignore_worker: dict[str, str] | None = None,
+    ) -> bool:
+        if any(
+            account["username"] == username and account["role"] != "worker"
+            for account in DEMO_USERS
+        ):
+            return False
+        return not any(
+            worker is not ignore_worker and worker["username"] == username
+            for worker in self.workers
+        )
+
     def create(self, *, name: str, phone: str, address: str, neighborhood: str,
                quantity: str, description: str = "") -> dict[str, Any]:
         values = (name.strip(), phone.strip(), address.strip(), neighborhood.strip(), quantity.strip())
@@ -171,7 +269,7 @@ class RequestService:
         if status not in _TRANSITIONS.get(request["status"], set()):
             raise ValueError(f"No se puede pasar de {STATUS_LABELS[request['status']]} a {STATUS_LABELS.get(status, status)}.")
         if status == "assigned":
-            if worker not in WORKERS:
+            if worker not in self.worker_names:
                 raise ValueError("Selecciona un trabajador válido.")
             request["worker"] = worker
         if status == "pending":
