@@ -1,5 +1,6 @@
 .venv/
 kivy_venv/
+ramaseco_py/
 __pycache__/
 *.pyc
 *.pyo
