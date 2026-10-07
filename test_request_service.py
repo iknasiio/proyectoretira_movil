@@ -57,6 +57,36 @@ class RequestServiceTests(unittest.TestCase):
         self.assertEqual(worker["role"], "worker")
         self.assertIsNone(self.service.authenticate("admin", "incorrecta"))
 
+    def test_new_accounts_can_be_registered_and_recovered(self):
+        account = self.service.register_account(
+            username="sofia",
+            password="sofia123",
+            name="Sofía Ramírez",
+            email="sofia@example.com",
+            phone="555 010 2099",
+        )
+
+        self.assertEqual(account["role"], "citizen")
+        self.assertEqual(account["email"], "sofia@example.com")
+        self.assertEqual(
+            self.service.authenticate("SOFIA", "sofia123")["name"],
+            "Sofía Ramírez",
+        )
+        self.assertEqual(
+            self.service.recover_password("sofia"),
+            "sofia123",
+        )
+
+    def test_registration_rejects_duplicate_usernames(self):
+        with self.assertRaises(ValueError):
+            self.service.register_account(
+                username="elena",
+                password="newpassword",
+                name="Elena Another",
+                email="elena2@example.com",
+                phone="555 010 2000",
+            )
+
     def test_pending_request_requires_reason_and_can_be_resumed(self):
         self.service.transition("RM-1048", "accepted")
         self.service.transition("RM-1048", "assigned", worker=WORKERS[0])

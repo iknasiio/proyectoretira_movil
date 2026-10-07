@@ -112,6 +112,129 @@ class RamaMobileApp(MDApp):
         self.root.ids.nav_bar.height = 0
         self.root.ids.nav_bar.opacity = 0
 
+    def open_register(self) -> None:
+        fields = MDBoxLayout(
+            orientation="vertical", spacing=dp(11), padding=dp(12),
+            size_hint_y=None, height=dp(390),
+        )
+        username = MDTextField(
+            MDTextFieldHintText(text="Usuario"), mode="outlined",
+            size_hint_y=None, height=dp(54),
+        )
+        name = MDTextField(
+            MDTextFieldHintText(text="Nombre completo"), mode="outlined",
+            size_hint_y=None, height=dp(54),
+        )
+        email = MDTextField(
+            MDTextFieldHintText(text="Correo electrónico"), mode="outlined",
+            size_hint_y=None, height=dp(54),
+        )
+        phone = MDTextField(
+            MDTextFieldHintText(text="Número de teléfono"), mode="outlined",
+            size_hint_y=None, height=dp(54),
+        )
+        password = MDTextField(
+            MDTextFieldHintText(text="Contraseña"), mode="outlined",
+            size_hint_y=None, height=dp(54), password=True,
+        )
+        confirm_password = MDTextField(
+            MDTextFieldHintText(text="Confirmar contraseña"), mode="outlined",
+            size_hint_y=None, height=dp(54), password=True,
+        )
+        fields.add_widget(username)
+        fields.add_widget(name)
+        fields.add_widget(email)
+        fields.add_widget(phone)
+        fields.add_widget(password)
+        fields.add_widget(confirm_password)
+
+        cancel_button = MDButton(MDButtonText(text="Cancelar"), style="text")
+        save_button = MDButton(MDButtonText(text="Crear cuenta"), style="filled")
+        button_container = MDDialogButtonContainer(
+            Widget(), cancel_button, save_button, spacing=dp(8),
+        )
+        dialog = MDDialog(
+            MDDialogHeadlineText(text="Registrar cuenta"),
+            MDDialogSupportingText(text="Crea una cuenta ciudadana en este sistema local."),
+            MDDialogContentContainer(
+                fields, orientation="vertical", padding=(dp(16), dp(8)),
+            ),
+            button_container,
+            size=(dp(410), dp(650)),
+            size_hint=(None, None),
+        )
+        cancel_button.bind(on_release=lambda *_args: dialog.dismiss())
+        save_button.bind(on_release=lambda *_args: self._save_registration(
+            dialog, username, password, confirm_password, name, email, phone,
+        ))
+        dialog.open()
+
+    def _save_registration(self, dialog, username, password, confirm_password,
+                            name, email, phone) -> None:
+        if password.text != confirm_password.text:
+            self._show_dialog(
+                "Contraseña no coincidente",
+                "Las dos contraseñas deben ser exactamente iguales.",
+            )
+            return
+        try:
+            account = self.service.register_account(
+                username=username.text,
+                password=password.text,
+                name=name.text,
+                email=email.text,
+                phone=phone.text,
+            )
+        except ValueError as error:
+            self._show_dialog("No se pudo registrar", str(error))
+            return
+        dialog.dismiss()
+        self._show_dialog(
+            "Cuenta creada",
+            f"Hola {account['name']}. Ahora puedes iniciar sesión con {account['username']}.",
+        )
+
+    def open_recovery(self) -> None:
+        username = MDTextField(
+            MDTextFieldHintText(text="Usuario"), mode="outlined",
+            size_hint_y=None, height=dp(58),
+        )
+        content = MDBoxLayout(
+            orientation="vertical", spacing=dp(10), padding=dp(12),
+        )
+        content.add_widget(username)
+        cancel_button = MDButton(MDButtonText(text="Cancelar"), style="text")
+        recover_button = MDButton(MDButtonText(text="Recuperar"), style="filled")
+        button_container = MDDialogButtonContainer(
+            Widget(), cancel_button, recover_button, spacing=dp(8),
+        )
+        dialog = MDDialog(
+            MDDialogHeadlineText(text="Recuperar contraseña"),
+            MDDialogSupportingText(text="Introduce el usuario de tu cuenta."),
+            MDDialogContentContainer(content, orientation="vertical", padding=(dp(16), dp(8)),
+            ),
+            button_container,
+        )
+        cancel_button.bind(on_release=lambda *_args: dialog.dismiss())
+        recover_button.bind(on_release=lambda *_args: self._recover_password(
+            dialog, username,
+        ))
+        dialog.open()
+
+    def _recover_password(self, dialog, username) -> None:
+        password = self.service.recover_password(username.text)
+        dialog.dismiss()
+        if password is None:
+            self._show_dialog(
+                "Usuario no encontrado",
+                "No existe una cuenta con ese usuario en este sistema local.",
+            )
+            return
+        self._show_dialog(
+            "Contraseña recuperada",
+            f"Tu contraseña es: {password}. Cambiála después de iniciar sesión.",
+        )
+
     def _label(self, text: str, *, size: int = 15, color_hex: str = INK,
                height: int = 25, bold: bool = False) -> MDLabel:
         return MDLabel(
@@ -175,8 +298,10 @@ class RamaMobileApp(MDApp):
         container.clear_widgets()
         pending = sum(item["status"] == "submitted" for item in self.service.requests)
         waiting = sum(item["status"] == "accepted" for item in self.service.requests)
-        active = sum(item["status"] in {"assigned", "in_progress"} for item in self.service.requests)
-        active += sum(item["status"] == "pending" for item in self.service.requests)
+        active = sum(
+            item["status"] in {"assigned", "in_progress", "pending"}
+            for item in self.service.requests
+        )
         screen.ids.pending_count.text = str(pending)
         screen.ids.assign_count.text = str(waiting)
         screen.ids.active_count.text = str(active)
