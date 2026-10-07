@@ -95,6 +95,7 @@ class RequestService:
 
     def __init__(self):
         self.requests = [request.copy() for request in INITIAL_REQUESTS]
+        self.accounts = [dict(account) for account in DEMO_USERS]
         self.workers = [
             account.copy() for account in DEMO_USERS
             if account["role"] == "worker"
@@ -107,7 +108,7 @@ class RequestService:
     def authenticate(self, username: str, password: str) -> dict[str, str] | None:
         normalized_username = username.strip().casefold()
         accounts = [
-            account for account in DEMO_USERS if account["role"] != "worker"
+            account for account in self.accounts if account["role"] != "worker"
         ] + self.workers
         for account in accounts:
             if (account["username"] == normalized_username
@@ -118,6 +119,34 @@ class RequestService:
                     if key in account
                 }
         return None
+
+    def register_account(self, *, username: str, password: str,
+                         name: str, email: str, phone: str) -> dict[str, str]:
+        normalized_username = username.strip().casefold()
+        if not normalized_username or len(password.strip()) < 6:
+            raise ValueError("Escribe un usuario y una contraseña de al menos 6 caracteres.")
+        if not name.strip() or "@" not in email.strip() or sum(character.isdigit() for character in phone) < 8:
+            raise ValueError("Escribe nombre, correo y número de teléfono válidos.")
+        if any(account["username"] == normalized_username for account in self.accounts):
+            raise ValueError("Ese usuario ya está registrado.")
+        account = {
+            "username": normalized_username,
+            "password": password,
+            "name": name.strip(),
+            "email": email.strip(),
+            "phone": phone.strip(),
+            "role": "citizen",
+        }
+        self.accounts.append(account)
+        return account
+
+    def recover_password(self, username: str) -> str | None:
+        normalized_username = username.strip().casefold()
+        account = next(
+            (item for item in self.accounts if item["username"] == normalized_username),
+            None,
+        )
+        return account["password"] if account else None
 
     def list_workers(self) -> list[dict[str, str]]:
         return [

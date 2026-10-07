@@ -108,7 +108,7 @@
                         style: "outlined"
                         orientation: "vertical"
                         size_hint_y: None
-                        height: dp(278)
+                        height: dp(300)
                         padding: dp(16)
                         spacing: dp(10)
 
@@ -125,7 +125,7 @@
                             id: login_username
                             mode: "outlined"
                             size_hint_y: None
-                            height: dp(64)
+                            height: dp(58)
                             font_size: dp(16)
                             MDTextFieldHintText:
                                 text: "Usuario"
@@ -134,7 +134,7 @@
                             id: login_password
                             mode: "outlined"
                             size_hint_y: None
-                            height: dp(64)
+                            height: dp(58)
                             font_size: dp(16)
                             password: True
                             MDTextFieldHintText:
@@ -144,11 +144,33 @@
                             style: "filled"
                             size_hint_x: 1
                             size_hint_y: None
-                            height: dp(50)
+                            height: dp(48)
                             on_release: app.sign_in()
                             MDButtonText:
                                 text: "Ingresar"
                                 font_size: dp(15)
+
+                        MDBoxLayout:
+                            orientation: "horizontal"
+                            size_hint_y: None
+                            height: dp(36)
+                            spacing: dp(8)
+
+                            MDButton:
+                                style: "text"
+                                size_hint_x: 1
+                                on_release: app.open_register()
+                                MDButtonText:
+                                    text: "Registrar cuenta"
+                                    font_size: dp(12)
+
+                            MDButton:
+                                style: "text"
+                                size_hint_x: 1
+                                on_release: app.open_recovery()
+                                MDButtonText:
+                                    text: "Olvídame mi contraseña"
+                                    font_size: dp(12)
 
                 MDBoxLayout:
                     size_hint_y: 1
