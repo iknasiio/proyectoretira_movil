@@ -10,7 +10,6 @@ __pycache__/
 .idea/
 .vscode/
 *.log
-capturas/
 *.egg-info/
 .pytest_cache/
 .mypy_cache/
