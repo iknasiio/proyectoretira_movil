@@ -30,6 +30,16 @@ class RequestServiceTests(unittest.TestCase):
         assignments = self.service.for_worker(WORKERS[0])
         self.assertEqual({item["id"] for item in assignments}, {"RM-1046", "RM-1048"})
 
+    def test_assigned_request_can_be_reassigned_without_changing_status(self):
+        self.service.transition("RM-1047", "assigned", worker=WORKERS[0])
+
+        request = self.service.transition(
+            "RM-1047", "assigned", worker=WORKERS[1],
+        )
+
+        self.assertEqual(request["worker"], WORKERS[1])
+        self.assertEqual(request["status"], "assigned")
+
     def test_invalid_transition_and_unregistered_worker_are_rejected(self):
         with self.assertRaises(ValueError):
             self.service.transition("RM-1048", "completed")

@@ -266,7 +266,7 @@ class RamaMobileApp(MDApp):
         extra_height = 0
         if admin_actions and request["status"] == "submitted":
             extra_height = 54
-        elif admin_actions and request["status"] == "accepted":
+        elif admin_actions and request["status"] in {"accepted", "assigned"}:
             extra_height = 106
         elif worker_actions:
             extra_height = 54
@@ -319,18 +319,24 @@ class RamaMobileApp(MDApp):
                 "Aceptar solicitud",
                 lambda rid=request["id"]: self._change_status(rid, "accepted"),
             ))
-        elif admin_actions and request["status"] == "accepted":
+        elif admin_actions and request["status"] in {"accepted", "assigned"}:
             picker = Spinner(
-                text="Selecciona trabajador", values=self.service.worker_names,
+                text=request.get("worker") or "Selecciona trabajador",
+                values=self.service.worker_names,
                 size_hint_y=None, height=dp(48),
                 background_normal="", background_color=(0.95, 0.96, 0.94, 1),
                 color=(0.11, 0.24, 0.19, 1), font_size=dp(14),
             )
             card.add_widget(picker)
-            card.add_widget(self._button(
+            assign_button = self._button(
                 "Asignar trabajador",
                 lambda rid=request["id"], select=picker: self._assign(rid, select.text),
+            )
+            assign_button.disabled = picker.text not in self.service.worker_names
+            picker.bind(text=lambda _picker, selected: setattr(
+                assign_button, "disabled", selected not in self.service.worker_names,
             ))
+            card.add_widget(assign_button)
         elif worker_actions:
             actions = MDBoxLayout(
                 orientation="horizontal", spacing=dp(5),
@@ -543,6 +549,12 @@ class RamaMobileApp(MDApp):
 
     def _assign(self, request_id: str, worker: str) -> None:
         if not self.current_user or self.current_user["role"] != "admin":
+            return
+        if worker not in self.service.worker_names:
+            self._show_dialog(
+                "Selecciona trabajador",
+                "Elige una persona del menú antes de asignar el retiro.",
+            )
             return
         self._change_status(request_id, "assigned", worker=worker)
 

@@ -83,7 +83,7 @@ INITIAL_REQUESTS = [
 _TRANSITIONS = {
     "submitted": {"accepted"},
     "accepted": {"assigned"},
-    "assigned": {"in_progress", "pending"},
+    "assigned": {"assigned", "in_progress", "pending"},
     "in_progress": {"completed", "pending"},
     "pending": {"in_progress", "completed"},
     "completed": set(),
