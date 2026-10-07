@@ -1,0 +1,500 @@
+#:import dp kivy.metrics.dp
+
+<RamaRoot>:
+    md_bg_color: 0.96, 0.97, 0.95, 1
+    MDBoxLayout:
+        orientation: "vertical"
+        spacing: 0
+
+        MDTopAppBar:
+            type: "small"
+            md_bg_color: 0.09, 0.24, 0.19, 1
+            MDTopAppBarTitle:
+                text: "Rama  ·  RETIRO DE PODA"
+                theme_text_color: "Custom"
+                text_color: 1, 1, 1, 1
+
+        ScreenManager:
+            id: screen_manager
+
+            LoginScreen:
+                name: "login"
+
+            CitizenScreen:
+                name: "citizen"
+
+            AdminScreen:
+                name: "admin"
+
+            WorkerScreen:
+                name: "worker"
+
+        MDBoxLayout:
+            id: nav_bar
+            size_hint_y: None
+            height: dp(64)
+            padding: dp(8), dp(7)
+            spacing: dp(5)
+            md_bg_color: 1, 1, 1, 1
+
+            MDLabel:
+                id: session_user
+                text: ""
+                font_size: dp(15)
+                bold: True
+                theme_text_color: "Custom"
+                text_color: 0.11, 0.24, 0.19, 1
+
+            MDButton:
+                id: logout_button
+                style: "tonal"
+                size_hint_x: None
+                width: dp(145)
+                on_release: app.sign_out()
+                MDButtonText:
+                    text: "Cerrar sesión"
+                    font_size: dp(14)
+
+<LoginScreen>:
+    MDBoxLayout:
+        orientation: "vertical"
+        ScrollView:
+            do_scroll_x: False
+            bar_width: dp(3)
+            MDBoxLayout:
+                orientation: "vertical"
+                size_hint_y: None
+                height: max(self.minimum_height, self.parent.height)
+
+                MDBoxLayout:
+                    size_hint_y: 0.2
+
+                MDBoxLayout:
+                    orientation: "vertical"
+                    size_hint_y: None
+                    height: self.minimum_height
+                    padding: dp(20), dp(12), dp(20), dp(12)
+                    spacing: dp(8)
+
+                    MDLabel:
+                        text: "MUNICIPIO  ·  SERVICIOS PÚBLICOS"
+                        size_hint_y: None
+                        height: dp(30)
+                        font_size: dp(13)
+                        bold: True
+                        theme_text_color: "Custom"
+                        text_color: 0.18, 0.28, 0.21, 1
+
+                    MDLabel:
+                        text: "Retiro de poda"
+                        size_hint_y: None
+                        height: dp(42)
+                        font_size: dp(27)
+                        bold: True
+                        theme_text_color: "Custom"
+                        text_color: 0.11, 0.18, 0.15, 1
+
+                    MDLabel:
+                        text: "Portal de atención ciudadana para coordinar el retiro de ramas y restos de poda."
+                        size_hint_y: None
+                        height: dp(54)
+                        font_size: dp(15)
+                        theme_text_color: "Custom"
+                        text_color: 0.29, 0.34, 0.30, 1
+                        text_size: self.width, None
+                        valign: "top"
+
+                    MDCard:
+                        style: "outlined"
+                        orientation: "vertical"
+                        size_hint_y: None
+                        height: dp(278)
+                        padding: dp(16)
+                        spacing: dp(10)
+
+                        MDLabel:
+                            text: "Acceso al sistema"
+                            size_hint_y: None
+                            height: dp(28)
+                            font_size: dp(17)
+                            bold: True
+                            theme_text_color: "Custom"
+                            text_color: 0.11, 0.18, 0.15, 1
+
+                        MDTextField:
+                            id: login_username
+                            mode: "outlined"
+                            size_hint_y: None
+                            height: dp(64)
+                            font_size: dp(16)
+                            MDTextFieldHintText:
+                                text: "Usuario"
+
+                        MDTextField:
+                            id: login_password
+                            mode: "outlined"
+                            size_hint_y: None
+                            height: dp(64)
+                            font_size: dp(16)
+                            password: True
+                            MDTextFieldHintText:
+                                text: "Contraseña"
+
+                        MDButton:
+                            style: "filled"
+                            size_hint_x: 1
+                            size_hint_y: None
+                            height: dp(50)
+                            on_release: app.sign_in()
+                            MDButtonText:
+                                text: "Ingresar"
+                                font_size: dp(15)
+
+                MDBoxLayout:
+                    size_hint_y: 1
+
+<CitizenScreen>:
+    MDBoxLayout:
+        orientation: "vertical"
+        ScrollView:
+            do_scroll_x: False
+            bar_width: dp(3)
+            MDBoxLayout:
+                orientation: "vertical"
+                size_hint_y: None
+                height: self.minimum_height
+                padding: dp(17), dp(14), dp(17), dp(20)
+                spacing: dp(10)
+
+                MDLabel:
+                    text: "PORTAL CIUDADANO"
+                    size_hint_y: None
+                    height: dp(22)
+                    font_size: dp(14)
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: 0.29, 0.34, 0.30, 1
+
+                MDLabel:
+                    text: "Solicita el retiro"
+                    size_hint_y: None
+                    height: dp(34)
+                    font_size: dp(23)
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: 0.11, 0.18, 0.15, 1
+
+                MDLabel:
+                    text: "Cuéntanos dónde están las ramas y el equipo municipal coordinará su recolección."
+                    size_hint_y: None
+                    height: dp(56)
+                    font_size: dp(15)
+                    theme_text_color: "Custom"
+                    text_color: 0.29, 0.34, 0.30, 1
+                    text_size: self.width, None
+                    valign: "top"
+
+                MDCard:
+                    style: "outlined"
+                    orientation: "vertical"
+                    size_hint_y: None
+                    height: dp(620)
+                    padding: dp(16)
+                    spacing: dp(8)
+
+                    MDLabel:
+                        text: "Nueva solicitud"
+                        size_hint_y: None
+                        height: dp(32)
+                        font_size: dp(17)
+                        bold: True
+                        theme_text_color: "Custom"
+                        text_color: 0.11, 0.18, 0.15, 1
+
+                    MDTextField:
+                        id: full_name
+                        mode: "outlined"
+                        size_hint_y: None
+                        height: dp(64)
+                        font_size: dp(16)
+                        text: "Elena Martínez"
+                        MDTextFieldHintText:
+                            text: "Nombre completo"
+
+                    MDTextField:
+                        id: phone
+                        mode: "outlined"
+                        size_hint_y: None
+                        height: dp(64)
+                        font_size: dp(16)
+                        text: "555 010 2048"
+                        MDTextFieldHintText:
+                            text: "Teléfono de contacto"
+
+                    MDTextField:
+                        id: address
+                        mode: "outlined"
+                        size_hint_y: None
+                        height: dp(64)
+                        font_size: dp(16)
+                        MDTextFieldHintText:
+                            text: "Dirección y número"
+
+                    MDTextField:
+                        id: neighborhood
+                        mode: "outlined"
+                        size_hint_y: None
+                        height: dp(64)
+                        font_size: dp(16)
+                        MDTextFieldHintText:
+                            text: "Colonia o barrio"
+
+                    Spinner:
+                        id: quantity
+                        text: "Selecciona cantidad"
+                        values: ("1 montón", "2 montones", "3 montones", "Más de 3 montones")
+                        size_hint_y: None
+                        height: dp(52)
+                        background_normal: ""
+                        background_color: 0.94, 0.96, 0.93, 1
+                        color: 0.11, 0.18, 0.15, 1
+                        font_size: dp(15)
+
+                    MDTextField:
+                        id: details
+                        mode: "outlined"
+                        size_hint_y: None
+                        height: dp(86)
+                        multiline: True
+                        font_size: dp(16)
+                        MDTextFieldHintText:
+                            text: "Referencia del lugar (opcional)"
+
+                    MDButton:
+                        style: "filled"
+                        size_hint_x: 1
+                        size_hint_y: None
+                        height: dp(50)
+                        on_release: app.submit_request()
+                        MDButtonText:
+                            text: "Enviar solicitud"
+                            font_size: dp(15)
+
+                MDLabel:
+                    id: citizen_count
+                    text: "Mis solicitudes"
+                    size_hint_y: None
+                    height: dp(32)
+                    font_size: dp(17)
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: 0.11, 0.18, 0.15, 1
+
+                MDBoxLayout:
+                    id: citizen_requests
+                    orientation: "vertical"
+                    size_hint_y: None
+                    height: self.minimum_height
+                    spacing: dp(8)
+
+<AdminScreen>:
+    MDBoxLayout:
+        orientation: "vertical"
+        ScrollView:
+            do_scroll_x: False
+            bar_width: dp(3)
+            MDBoxLayout:
+                orientation: "vertical"
+                size_hint_y: None
+                height: self.minimum_height
+                padding: dp(17), dp(14), dp(17), dp(20)
+                spacing: dp(10)
+
+                MDLabel:
+                    text: "CENTRO DE OPERACIONES"
+                    size_hint_y: None
+                    height: dp(22)
+                    font_size: dp(14)
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: 0.29, 0.34, 0.30, 1
+
+                MDLabel:
+                    text: "Solicitudes"
+                    size_hint_y: None
+                    height: dp(34)
+                    font_size: dp(23)
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: 0.11, 0.18, 0.15, 1
+
+                MDLabel:
+                    text: "Revisa los retiros, acepta solicitudes y asigna al equipo."
+                    size_hint_y: None
+                    height: dp(45)
+                    font_size: dp(15)
+                    theme_text_color: "Custom"
+                    text_color: 0.29, 0.34, 0.30, 1
+                    text_size: self.width, None
+                    valign: "top"
+
+                MDCard:
+                    style: "filled"
+                    orientation: "horizontal"
+                    size_hint_y: None
+                    height: dp(88)
+                    padding: dp(12)
+                    spacing: dp(8)
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        MDLabel:
+                            id: pending_count
+                            text: "0"
+                            font_size: dp(20)
+                            bold: True
+                            theme_text_color: "Custom"
+                            text_color: 0.11, 0.24, 0.19, 1
+                        MDLabel:
+                            text: "Por revisar"
+                            font_size: dp(14)
+                            theme_text_color: "Custom"
+                            text_color: 0.29, 0.34, 0.30, 1
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        MDLabel:
+                            id: assign_count
+                            text: "0"
+                            font_size: dp(20)
+                            bold: True
+                            theme_text_color: "Custom"
+                            text_color: 0.11, 0.24, 0.19, 1
+                        MDLabel:
+                            text: "Por asignar"
+                            font_size: dp(14)
+                            theme_text_color: "Custom"
+                            text_color: 0.29, 0.34, 0.30, 1
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        MDLabel:
+                            id: active_count
+                            text: "0"
+                            font_size: dp(20)
+                            bold: True
+                            theme_text_color: "Custom"
+                            text_color: 0.11, 0.24, 0.19, 1
+                        MDLabel:
+                            text: "En proceso"
+                            font_size: dp(14)
+                            theme_text_color: "Custom"
+                            text_color: 0.29, 0.34, 0.30, 1
+
+                MDBoxLayout:
+                    id: admin_requests
+                    orientation: "vertical"
+                    size_hint_y: None
+                    height: self.minimum_height
+                    spacing: dp(8)
+
+<WorkerScreen>:
+    MDBoxLayout:
+        orientation: "vertical"
+        ScrollView:
+            do_scroll_x: False
+            bar_width: dp(3)
+            MDBoxLayout:
+                orientation: "vertical"
+                size_hint_y: None
+                height: self.minimum_height
+                padding: dp(17), dp(14), dp(17), dp(20)
+                spacing: dp(10)
+
+                MDLabel:
+                    text: "MI JORNADA"
+                    size_hint_y: None
+                    height: dp(22)
+                    font_size: dp(14)
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: 0.29, 0.34, 0.30, 1
+
+                MDLabel:
+                    text: "Servicios asignados"
+                    size_hint_y: None
+                    height: dp(34)
+                    font_size: dp(22)
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: 0.11, 0.18, 0.15, 1
+
+                MDLabel:
+                    text: "Consulta la dirección y actualiza cada retiro al avanzar."
+                    size_hint_y: None
+                    height: dp(44)
+                    font_size: dp(15)
+                    theme_text_color: "Custom"
+                    text_color: 0.29, 0.34, 0.30, 1
+                    text_size: self.width, None
+                    valign: "top"
+
+                MDLabel:
+                    id: worker_identity
+                    text: "Trabajador"
+                    size_hint_y: None
+                    height: dp(32)
+                    font_size: dp(16)
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: 0.11, 0.24, 0.19, 1
+
+                MDCard:
+                    style: "filled"
+                    orientation: "vertical"
+                    size_hint_y: None
+                    height: dp(139)
+                    padding: dp(12)
+                    spacing: dp(5)
+                    MDLabel:
+                        id: route_count
+                        text: "Ruta sugerida"
+                        size_hint_y: None
+                        height: dp(26)
+                        font_size: dp(16)
+                        bold: True
+                        theme_text_color: "Custom"
+                        text_color: 0.11, 0.24, 0.19, 1
+                    MDLabel:
+                        text: "Orden por colonia y dirección; confirma las paradas en Maps."
+                        size_hint_y: None
+                        height: dp(35)
+                        font_size: dp(14)
+                        theme_text_color: "Custom"
+                        text_color: 0.29, 0.34, 0.30, 1
+                        text_size: self.width, None
+                        valign: "top"
+                    MDButton:
+                        id: open_route
+                        style: "filled"
+                        size_hint_x: 1
+                        size_hint_y: None
+                        height: dp(50)
+                        on_release: app.open_worker_route()
+                        MDButtonText:
+                            text: "Abrir recorrido en Google Maps"
+                            font_size: dp(14)
+
+                MDLabel:
+                    id: worker_count
+                    text: "Servicios pendientes"
+                    size_hint_y: None
+                    height: dp(31)
+                    font_size: dp(16)
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: 0.11, 0.18, 0.15, 1
+
+                MDBoxLayout:
+                    id: worker_requests
+                    orientation: "vertical"
+                    size_hint_y: None
+                    height: self.minimum_height
+                    spacing: dp(8)

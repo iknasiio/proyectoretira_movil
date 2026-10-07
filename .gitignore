@@ -1,0 +1,16 @@
+.venv/
+kivy_venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+.DS_Store
+.idea/
+.vscode/
+*.log
+capturas/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
