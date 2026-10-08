@@ -380,9 +380,20 @@ class RamaMobileApp(MDApp):
                 color_hex=MUTED, height=dp(32),
             ))
         for worker in workers:
+            assigned_requests = self.service.for_worker(worker["name"])
+            assignment_text = "Sin retiros activos"
+            if assigned_requests:
+                preview = [
+                    f"{request['id']} · {request['address']}"
+                    for request in assigned_requests[:2]
+                ]
+                assignment_text = (
+                    "Asignado: " + " | ".join(preview)
+                    + (" + más" if len(assigned_requests) > 2 else "")
+                )
             worker_card = MDCard(
                 style="outlined", orientation="vertical", padding=dp(10),
-                spacing=dp(4), size_hint_y=None, height=dp(112),
+                spacing=dp(4), size_hint_y=None, height=dp(146),
             )
             worker_card.add_widget(self._label(
                 worker["name"], size=15, height=dp(24), bold=True,
@@ -390,6 +401,11 @@ class RamaMobileApp(MDApp):
             worker_card.add_widget(self._label(
                 f"Usuario: {worker['username']}", size=13,
                 color_hex=MUTED, height=dp(20),
+            ))
+            worker_card.add_widget(self._label(
+                assignment_text, size=12,
+                color_hex=FOREST if assigned_requests else MUTED,
+                height=dp(32),
             ))
             actions = MDBoxLayout(
                 orientation="horizontal", spacing=dp(8),
