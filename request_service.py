@@ -245,12 +245,15 @@ class RequestService:
         )
 
     def create(self, *, name: str, phone: str, address: str, neighborhood: str,
-               quantity: str, description: str = "") -> dict[str, Any]:
+               quantity: str, photo_path: str,
+               description: str = "") -> dict[str, Any]:
         values = (name.strip(), phone.strip(), address.strip(), neighborhood.strip(), quantity.strip())
         if not all(values):
             raise ValueError("Completa nombre, teléfono, dirección, colonia y cantidad.")
         if quantity not in {"1 montón", "2 montones", "3 montones", "Más de 3 montones"}:
             raise ValueError("Selecciona una cantidad válida de ramas.")
+        if not photo_path.strip():
+            raise ValueError("Adjunta una foto de las ramas para enviar la solicitud.")
         last_number = max(
             (int(item["id"].removeprefix("RM-")) for item in self.requests
              if str(item.get("id", "")).startswith("RM-")
@@ -265,11 +268,41 @@ class RequestService:
             "neighborhood": values[3],
             "quantity": values[4],
             "description": description.strip(),
+            "photo_path": photo_path,
             "date": date.today().isoformat(),
             "status": "submitted",
             "worker": "",
         }
         self.requests.insert(0, request)
+        return request
+
+    def update_request(self, request_id: str, *, citizen_name: str,
+                       address: str, neighborhood: str, quantity: str,
+                       photo_path: str, description: str = "") -> dict[str, Any]:
+        request = self.get(request_id)
+        if request["name"].strip().casefold() != citizen_name.strip().casefold():
+            raise ValueError("No tienes permiso para editar esta solicitud.")
+        values = (address.strip(), neighborhood.strip(), quantity.strip())
+        if not all(values):
+            raise ValueError("Completa dirección, colonia y cantidad.")
+        if quantity not in {"1 montón", "2 montones", "3 montones", "Más de 3 montones"}:
+            raise ValueError("Selecciona una cantidad válida de ramas.")
+        if not photo_path.strip():
+            raise ValueError("Adjunta una foto de las ramas para guardar la solicitud.")
+        request.update({
+            "address": values[0],
+            "neighborhood": values[1],
+            "quantity": values[2],
+            "description": description.strip(),
+            "photo_path": photo_path,
+        })
+        return request
+
+    def delete_request(self, request_id: str, *, citizen_name: str) -> dict[str, Any]:
+        request = self.get(request_id)
+        if request["name"].strip().casefold() != citizen_name.strip().casefold():
+            raise ValueError("No tienes permiso para eliminar esta solicitud.")
+        self.requests.remove(request)
         return request
 
     def transition(self, request_id: str, status: str, *, worker: str = "",

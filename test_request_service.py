@@ -14,6 +14,7 @@ class RequestServiceTests(unittest.TestCase):
             address="Calle Arce 18",
             neighborhood="Centro",
             quantity="2 montones",
+            photo_path="foto.jpg",
             description="Junto al portón verde.",
         )
         self.assertEqual(request["status"], "submitted")
@@ -52,8 +53,61 @@ class RequestServiceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.service.create(
                 name="Ana Pérez", phone="", address="", neighborhood="Centro",
-                quantity="1 montón",
+                quantity="1 montón", photo_path="foto.jpg",
             )
+
+    def test_new_request_requires_a_photo(self):
+        with self.assertRaisesRegex(ValueError, "foto"):
+            self.service.create(
+                name="Ana Pérez",
+                phone="5551234567",
+                address="Calle Arce 18",
+                neighborhood="Centro",
+                quantity="1 montón",
+                photo_path="",
+            )
+
+    def test_citizen_can_edit_and_delete_their_request_in_any_status(self):
+        self.service.transition("RM-1048", "accepted")
+        self.service.transition("RM-1048", "assigned", worker=WORKERS[0])
+
+        edited = self.service.update_request(
+            "RM-1048",
+            citizen_name="Elena Martínez",
+            address="Calle Nueva 10",
+            neighborhood="Centro",
+            quantity="3 montones",
+            photo_path="nueva.jpg",
+            description="En la entrada.",
+        )
+
+        self.assertEqual(edited["status"], "assigned")
+        self.assertEqual(edited["worker"], WORKERS[0])
+        self.assertEqual(edited["address"], "Calle Nueva 10")
+        self.assertEqual(edited["photo_path"], "nueva.jpg")
+
+        deleted = self.service.delete_request(
+            "RM-1048", citizen_name="ELENA MARTÍNEZ",
+        )
+        self.assertEqual(deleted["id"], "RM-1048")
+        with self.assertRaisesRegex(ValueError, "No encontramos"):
+            self.service.get("RM-1048")
+
+    def test_citizen_cannot_edit_or_delete_another_citizens_request(self):
+        with self.assertRaisesRegex(ValueError, "permiso"):
+            self.service.update_request(
+                "RM-1048",
+                citizen_name="Ana Pérez",
+                address="Calle Nueva 10",
+                neighborhood="Centro",
+                quantity="1 montón",
+                photo_path="foto.jpg",
+            )
+        with self.assertRaisesRegex(ValueError, "permiso"):
+            self.service.delete_request(
+                "RM-1048", citizen_name="Ana Pérez",
+            )
+        self.assertEqual(self.service.get("RM-1048")["address"], "Calle Los Olmos 184")
 
     def test_accounts_authenticate_with_their_own_role_and_contact(self):
         citizen = self.service.authenticate("ELENA", "elena123")

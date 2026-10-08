@@ -1,13 +1,20 @@
 from __future__ import annotations
 
+import shutil
 import webbrowser
 from collections.abc import Callable
+from pathlib import Path
 from urllib.parse import urlencode
+from uuid import uuid4
 
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.lang import Builder
 from kivy.metrics import dp
+from kivy.uix.camera import Camera
+from kivy.uix.filechooser import FileChooserListView
+from kivy.uix.image import Image
+from kivy.uix.popup import Popup
 from kivy.uix.screenmanager import Screen
 from kivy.uix.spinner import Spinner
 from kivy.uix.widget import Widget
@@ -27,6 +34,7 @@ from kivymd.uix.dialog import (
 from kivymd.uix.label import MDLabel
 from kivymd.uix.textfield import MDTextField, MDTextFieldHintText
 from kivymd.uix.screen import MDScreen
+from PIL import Image as PillowImage
 
 from request_service import RequestService, STATUS_LABELS
 
@@ -64,6 +72,9 @@ class RamaMobileApp(MDApp):
             Window.size = (430, 850)
         self.service = RequestService()
         self.current_user = None
+        self.selected_photo_path = ""
+        self.editing_request_id = None
+        self.editing_original_photo = ""
         Builder.load_file("rama.kv")
         return RamaRoot()
 
@@ -233,23 +244,28 @@ class RamaMobileApp(MDApp):
     def open_recovery(self) -> None:
         username = MDTextField(
             MDTextFieldHintText(text="Usuario"), mode="outlined",
-            size_hint_y=None, height=dp(58),
+            size_hint_y=None, height=dp(64),
         )
-        content = MDBoxLayout(
-            orientation="vertical", spacing=dp(10), padding=dp(12),
-        )
-        content.add_widget(username)
         cancel_button = MDButton(MDButtonText(text="Cancelar"), style="text")
         recover_button = MDButton(MDButtonText(text="Recuperar"), style="filled")
         button_container = MDDialogButtonContainer(
             Widget(), cancel_button, recover_button, spacing=dp(8),
         )
+        supporting_text = MDDialogSupportingText(
+            text="Introduce el usuario de tu cuenta.",
+        )
+        supporting_text.size_hint_y = None
+        supporting_text.height = dp(36)
         dialog = MDDialog(
             MDDialogHeadlineText(text="Recuperar contraseña"),
-            MDDialogSupportingText(text="Introduce el usuario de tu cuenta."),
-            MDDialogContentContainer(content, orientation="vertical", padding=(dp(16), dp(8)),
+            supporting_text,
+            MDDialogContentContainer(
+                username, orientation="vertical",
+                padding=(dp(16), dp(16)),
             ),
             button_container,
+            size=(dp(410), dp(300)),
+            size_hint=(None, None),
         )
         cancel_button.bind(on_release=lambda *_args: dialog.dismiss())
         recover_button.bind(on_release=lambda *_args: self._recover_password(
@@ -286,9 +302,28 @@ class RamaMobileApp(MDApp):
             text_color=get_color_from_hex(color_hex),
         )
 
-    def _button(self, text: str, callback, *, style: str = "filled") -> MDButton:
-        button = MDButton(style=style, size_hint=(1, None), height=dp(44))
-        button.add_widget(MDButtonText(text=text, font_size=dp(14)))
+    def _button(
+        self,
+        text: str,
+        callback,
+        *,
+        style: str = "filled",
+        background_color: str | None = None,
+        text_color: str | None = None,
+        theme_width: str = "Primary",
+    ) -> MDButton:
+        button = MDButton(
+            style=style, theme_width=theme_width,
+            size_hint=(1, None), height=dp(44),
+        )
+        if background_color:
+            button.theme_bg_color = "Custom"
+            button.md_bg_color = get_color_from_hex(background_color)
+        button_text = MDButtonText(text=text, font_size=dp(14))
+        if text_color:
+            button_text.theme_text_color = "Custom"
+            button_text.text_color = get_color_from_hex(text_color)
+        button.add_widget(button_text)
         button.bind(on_release=lambda *_args: callback())
         return button
 
@@ -348,7 +383,7 @@ class RamaMobileApp(MDApp):
                 size=14, color_hex=MUTED, height=48,
             ))
         for request in requests:
-            container.add_widget(self._request_card(request))
+            container.add_widget(self._request_card(request, citizen_actions=True))
 
     def refresh_admin(self) -> None:
         if not self.root or "screen_manager" not in self.root.ids:
@@ -461,22 +496,27 @@ class RamaMobileApp(MDApp):
                 request, worker_actions=True, stop_number=stop_number,
             ))
 
-    def _request_card(self, request: dict, *, admin_actions: bool = False,
+    def _request_card(self, request: dict, *, citizen_actions: bool = False,
+                      admin_actions: bool = False,
                       worker_actions: bool = False,
                       stop_number: int | None = None) -> MDCard:
         extra_height = 0
+        if citizen_actions:
+            extra_height += 50
         if admin_actions and request["status"] == "submitted":
-            extra_height = 54
+            extra_height += 54
         elif admin_actions and request["status"] in {"accepted", "assigned"}:
-            extra_height = 106
+            extra_height += 106
         elif worker_actions:
-            extra_height = 54
+            extra_height += 54
         if request.get("worker"):
             extra_height += 27
         if request.get("description"):
             extra_height += 38
         if request.get("pending_reason"):
             extra_height += 44
+        if request.get("photo_path"):
+            extra_height += 48
         if stop_number is not None:
             extra_height += 26
         card = MDCard(
@@ -514,8 +554,35 @@ class RamaMobileApp(MDApp):
                 f"Motivo pendiente: {request['pending_reason']}", size=14,
                 color_hex="#70410F", height=dp(40),
             ))
+        if request.get("photo_path"):
+            card.add_widget(self._button(
+                "Ver foto adjunta",
+                lambda path=request["photo_path"], rid=request["id"]:
+                self._show_request_photo(rid, path),
+                style="text",
+            ))
 
-        if admin_actions and request["status"] == "submitted":
+        if citizen_actions:
+            actions = MDBoxLayout(
+                orientation="horizontal", spacing=dp(6),
+                size_hint_y=None, height=dp(46),
+            )
+            actions.add_widget(self._button(
+                "Editar",
+                lambda rid=request["id"]: self._begin_edit_request(rid),
+                background_color=FOREST,
+                text_color="#FFFFFF",
+                theme_width="Custom",
+            ))
+            actions.add_widget(self._button(
+                "Borrar",
+                lambda rid=request["id"]: self._confirm_delete_request(rid),
+                background_color="#A61B1B",
+                text_color="#FFFFFF",
+                theme_width="Custom",
+            ))
+            card.add_widget(actions)
+        elif admin_actions and request["status"] == "submitted":
             card.add_widget(self._button(
                 "Aceptar solicitud",
                 lambda rid=request["id"]: self._change_status(rid, "accepted"),
@@ -564,6 +631,265 @@ class RamaMobileApp(MDApp):
             actions.add_widget(pending_button)
             card.add_widget(actions)
         return card
+
+    def _show_request_photo(self, request_id: str, photo_path: str) -> None:
+        try:
+            self.service.get(request_id)
+            if not Path(photo_path).is_file():
+                raise ValueError("No encontramos el archivo de la foto.")
+            image = Image(
+                source=photo_path, allow_stretch=True, keep_ratio=True,
+            )
+        except (OSError, ValueError) as error:
+            self._show_dialog("No se pudo abrir la foto", str(error))
+            return
+        popup = Popup(
+            title=f"Foto de {request_id}", content=image,
+            size_hint=(0.9, 0.8),
+        )
+        popup.open()
+
+    def _store_photo(self, source_path: str) -> str:
+        source = Path(source_path)
+        if source.suffix.casefold() not in {".jpg", ".jpeg", ".png", ".webp"}:
+            raise ValueError("Elige una imagen JPG, PNG o WEBP.")
+        if not source.is_file() or source.stat().st_size == 0:
+            raise ValueError("No se pudo leer el archivo de imagen seleccionado.")
+        destination_dir = Path(self.user_data_dir) / "request_photos"
+        destination_dir.mkdir(parents=True, exist_ok=True)
+        destination = destination_dir / f"{uuid4().hex}{source.suffix.lower()}"
+        shutil.copy2(source, destination)
+        try:
+            with PillowImage.open(destination) as image:
+                image.verify()
+                image_format = image.format
+        except (OSError, SyntaxError) as error:
+            destination.unlink(missing_ok=True)
+            raise ValueError("El archivo seleccionado no es una imagen válida.") from error
+        if image_format not in {"JPEG", "PNG", "WEBP"}:
+            destination.unlink(missing_ok=True)
+            raise ValueError("Elige una imagen JPG, PNG o WEBP.")
+        return str(destination)
+
+    def _set_selected_photo(self, source_path: str) -> bool:
+        previous_photo = self.selected_photo_path
+        try:
+            stored_photo = self._store_photo(source_path)
+        except (OSError, ValueError) as error:
+            self._show_dialog("No se pudo adjuntar la foto", str(error))
+            return False
+        self.selected_photo_path = stored_photo
+        if (previous_photo and previous_photo != self.editing_original_photo
+                and previous_photo != stored_photo):
+            self._remove_stored_photo(previous_photo)
+        citizen = self.root.ids.screen_manager.get_screen("citizen")
+        citizen.ids.photo_status.text = (
+            f"Foto adjunta: {Path(self.selected_photo_path).name}"
+        )
+        return True
+
+    def choose_request_photo(self) -> None:
+        chooser = FileChooserListView(
+            path=str(Path.home()),
+            filters=["*.jpg", "*.jpeg", "*.png", "*.webp"],
+            multiselect=False,
+        )
+        select_button = self._button("Usar foto seleccionada", lambda: None)
+        cancel_button = self._button("Cancelar", lambda: None, style="text")
+        actions = MDBoxLayout(
+            orientation="horizontal", spacing=dp(8),
+            size_hint_y=None, height=dp(48),
+        )
+        actions.add_widget(cancel_button)
+        actions.add_widget(select_button)
+        content = MDBoxLayout(
+            orientation="vertical", spacing=dp(8), padding=dp(8),
+        )
+        content.add_widget(chooser)
+        content.add_widget(actions)
+        popup = Popup(
+            title="Elige una foto", content=content,
+            size_hint=(0.95, 0.9),
+        )
+        cancel_button.bind(on_release=lambda *_args: popup.dismiss())
+        select_button.bind(on_release=lambda *_args: self._select_request_photo(
+            popup, chooser.selection,
+        ))
+        popup.open()
+
+    def _select_request_photo(self, popup: Popup, selection: list[str]) -> None:
+        if not selection:
+            self._show_dialog("Falta seleccionar", "Selecciona una foto antes de continuar.")
+            return
+        if self._set_selected_photo(selection[0]):
+            popup.dismiss()
+
+    def take_request_photo(self) -> None:
+        try:
+            camera = Camera(
+                play=True, resolution=(1280, 720),
+                size_hint=(1, 1),
+            )
+        except (AttributeError, OSError, RuntimeError, ValueError) as error:
+            self._show_dialog(
+                "Cámara no disponible",
+                f"No se pudo iniciar la cámara: {error}",
+            )
+            return
+        capture_button = self._button("Tomar foto", lambda: None)
+        cancel_button = self._button("Cancelar", lambda: None, style="text")
+        actions = MDBoxLayout(
+            orientation="horizontal", spacing=dp(8),
+            size_hint_y=None, height=dp(48),
+        )
+        actions.add_widget(cancel_button)
+        actions.add_widget(capture_button)
+        content = MDBoxLayout(
+            orientation="vertical", spacing=dp(8), padding=dp(8),
+        )
+        content.add_widget(camera)
+        content.add_widget(actions)
+        popup = Popup(
+            title="Tomar foto de las ramas", content=content,
+            size_hint=(0.95, 0.85),
+        )
+        cancel_button.bind(on_release=lambda *_args: popup.dismiss())
+        capture_button.bind(on_release=lambda *_args: self._capture_request_photo(
+            camera, popup,
+        ))
+        popup.bind(on_dismiss=lambda *_args: setattr(camera, "play", False))
+        popup.open()
+
+    def _capture_request_photo(self, camera: Camera, popup: Popup) -> None:
+        if not camera.texture:
+            self._show_dialog(
+                "Cámara no lista",
+                "Espera a que aparezca la imagen de la cámara e inténtalo de nuevo.",
+            )
+            return
+        temporary = Path(self.user_data_dir) / f"{uuid4().hex}.png"
+        try:
+            temporary.parent.mkdir(parents=True, exist_ok=True)
+            camera.texture.save(filename=str(temporary), flipped=False)
+            if not temporary.is_file() or temporary.stat().st_size == 0:
+                raise OSError("La cámara no generó un archivo de imagen.")
+            if not self._set_selected_photo(str(temporary)):
+                return
+        except (OSError, RuntimeError, ValueError) as error:
+            self._show_dialog("No se pudo tomar la foto", str(error))
+            return
+        finally:
+            temporary.unlink(missing_ok=True)
+        if self.selected_photo_path:
+            popup.dismiss()
+
+    def _begin_edit_request(self, request_id: str) -> None:
+        if not self.current_user or self.current_user["role"] != "citizen":
+            return
+        try:
+            request = self.service.get(request_id)
+            if request["name"].strip().casefold() != self.current_user["name"].strip().casefold():
+                raise ValueError("No tienes permiso para editar esta solicitud.")
+        except ValueError as error:
+            self._show_dialog("No se pudo editar", str(error))
+            return
+        screen = self.root.ids.screen_manager.get_screen("citizen")
+        fields = screen.ids
+        fields.address.text = request["address"]
+        fields.neighborhood.text = request["neighborhood"]
+        fields.quantity.text = request["quantity"]
+        fields.details.text = request.get("description", "")
+        self.editing_request_id = request_id
+        self.editing_original_photo = request.get("photo_path", "")
+        self.selected_photo_path = self.editing_original_photo
+        fields.photo_status.text = (
+            f"Foto adjunta: {Path(self.selected_photo_path).name}"
+            if self.selected_photo_path else "Foto obligatoria: elige o toma una foto."
+        )
+        fields.submit_request_button_text.text = "Guardar cambios"
+        fields.cancel_edit_button.disabled = False
+        fields.cancel_edit_button.opacity = 1
+        screen.ids.citizen_scroll.scroll_to(fields.address)
+
+    def cancel_edit_request(self) -> None:
+        if (self.selected_photo_path
+                and self.selected_photo_path != self.editing_original_photo):
+            self._remove_stored_photo(self.selected_photo_path)
+        self._clear_request_form()
+
+    def _clear_request_form(self) -> None:
+        screen = self.root.ids.screen_manager.get_screen("citizen")
+        screen.ids.address.text = ""
+        screen.ids.neighborhood.text = ""
+        screen.ids.quantity.text = "Selecciona cantidad"
+        screen.ids.details.text = ""
+        screen.ids.photo_status.text = "Foto obligatoria: elige o toma una foto."
+        screen.ids.submit_request_button_text.text = "Enviar solicitud"
+        screen.ids.cancel_edit_button.disabled = True
+        screen.ids.cancel_edit_button.opacity = 0
+        self.selected_photo_path = ""
+        self.editing_request_id = None
+        self.editing_original_photo = ""
+
+    def _confirm_delete_request(self, request_id: str) -> None:
+        if not self.current_user or self.current_user["role"] != "citizen":
+            return
+        try:
+            request = self.service.get(request_id)
+            if request["name"].strip().casefold() != self.current_user["name"].strip().casefold():
+                raise ValueError("No tienes permiso para eliminar esta solicitud.")
+        except ValueError as error:
+            self._show_dialog("No se pudo eliminar", str(error))
+            return
+        cancel_button = MDButton(MDButtonText(text="Cancelar"), style="text")
+        delete_button = MDButton(MDButtonText(text="Borrar solicitud"), style="tonal")
+        dialog = MDDialog(
+            MDDialogHeadlineText(text="Borrar solicitud"),
+            MDDialogSupportingText(
+                text=f"¿Quieres borrar {request_id}? Esta acción no se puede deshacer."
+            ),
+            MDDialogButtonContainer(
+                Widget(), cancel_button, delete_button, spacing=dp(8),
+            ),
+        )
+        cancel_button.bind(on_release=lambda *_args: dialog.dismiss())
+        delete_button.bind(on_release=lambda *_args: self._delete_request(
+            dialog, request_id,
+        ))
+        dialog.open()
+
+    def _delete_request(self, dialog: MDDialog, request_id: str) -> None:
+        if not self.current_user or self.current_user["role"] != "citizen":
+            dialog.dismiss()
+            return
+        try:
+            request = self.service.delete_request(
+                request_id, citizen_name=self.current_user["name"],
+            )
+        except ValueError as error:
+            dialog.dismiss()
+            self._show_dialog("No se pudo eliminar", str(error))
+            return
+        self._remove_stored_photo(request.get("photo_path", ""))
+        if self.editing_request_id == request_id:
+            self._clear_request_form()
+        dialog.dismiss()
+        self.refresh_all()
+
+    def _remove_stored_photo(self, photo_path: str) -> None:
+        if not photo_path:
+            return
+        photo_dir = (Path(self.user_data_dir) / "request_photos").resolve()
+        photo_file = Path(photo_path).resolve()
+        if photo_file.parent != photo_dir:
+            return
+        try:
+            photo_file.unlink(missing_ok=True)
+        except OSError as error:
+            self._show_dialog(
+                "No se pudo limpiar una foto",
+                f"La solicitud se actualizó, pero no se pudo borrar {photo_file.name}: {error}",
+            )
 
     def _ask_pending_reason(self, request_id: str) -> None:
         reason_field = MDTextField(
@@ -743,6 +1069,7 @@ class RamaMobileApp(MDApp):
         neighborhood = fields.neighborhood.text.strip()
         quantity = fields.quantity.text
         description = fields.details.text.strip()
+        was_editing = bool(self.editing_request_id)
         if not all((name, phone, address, neighborhood)):
             self._show_dialog("Faltan datos", "Completa nombre, teléfono, dirección y colonia para enviar la solicitud.")
             return
@@ -753,19 +1080,44 @@ class RamaMobileApp(MDApp):
             self._show_dialog("Selecciona la cantidad", "Indica cuántos montones de ramas deben retirarse.")
             return
         try:
-            request = self.service.create(
-                name=name, phone=phone, address=address,
-                neighborhood=neighborhood, quantity=quantity,
-                description=description,
-            )
+            if not self.selected_photo_path:
+                self._show_dialog(
+                    "Falta la foto",
+                    "Adjunta una foto de las ramas, tomada con la cámara o elegida del dispositivo.",
+                )
+                return
+            if self.editing_request_id:
+                request_id = self.editing_request_id
+                old_photo = self.editing_original_photo
+                request = self.service.update_request(
+                    request_id,
+                    citizen_name=name,
+                    address=address,
+                    neighborhood=neighborhood,
+                    quantity=quantity,
+                    photo_path=self.selected_photo_path,
+                    description=description,
+                )
+                if old_photo and old_photo != self.selected_photo_path:
+                    self._remove_stored_photo(old_photo)
+                success_message = f"Actualizamos {request['id']}."
+            else:
+                request = self.service.create(
+                    name=name, phone=phone, address=address,
+                    neighborhood=neighborhood, quantity=quantity,
+                    photo_path=self.selected_photo_path,
+                    description=description,
+                )
+                success_message = f"Registramos {request['id']}. Administración la revisará."
         except ValueError as error:
             self._show_dialog("No se pudo enviar", str(error))
             return
-        fields.address.text = ""
-        fields.neighborhood.text = ""
-        fields.details.text = ""
+        self._clear_request_form()
         self.refresh_all()
-        self._show_dialog("Solicitud enviada", f"Registramos {request['id']}. Administración la revisará.")
+        self._show_dialog(
+            "Solicitud actualizada" if was_editing else "Solicitud enviada",
+            success_message,
+        )
 
     def _assign(self, request_id: str, worker: str) -> None:
         if not self.current_user or self.current_user["role"] != "admin":

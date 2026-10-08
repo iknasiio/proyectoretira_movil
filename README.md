@@ -41,11 +41,11 @@ Son cuentas fijas para la demostración académica, no credenciales reales. No u
 
 ## Flujo de la demo
 
-1. **Ciudadano:** llena el formulario y envía una solicitud.
+1. **Ciudadano:** llena el formulario, adjunta una foto obligatoria (desde el dispositivo o con la cámara) y envía la solicitud. Puede editar o borrar sus solicitudes desde cualquier etapa.
 2. **Administración:** acepta la solicitud y asigna una persona del equipo.
 3. **Trabajador:** inicia sesión con su propia cuenta, ve sus paradas ordenadas por colonia/dirección, abre el recorrido en Google Maps, inicia el retiro y lo marca realizado o pendiente con un motivo.
 
-Hay solicitudes de ejemplo para recorrer todas las etapas. El enlace a Maps usa las direcciones ingresadas; el orden es una sugerencia simple, no optimización de tránsito ni validación de geolocalización. Los datos y las cuentas son locales y se reinician al cerrar la app. La autenticación es demostrativa, no protege datos reales ni comparte solicitudes entre dispositivos; producción requiere un backend municipal con contraseñas seguras, permisos y geocodificación.
+Hay solicitudes de ejemplo para recorrer todas las etapas. El enlace a Maps usa las direcciones ingresadas; el orden es una sugerencia simple, no optimización de tránsito ni validación de geolocalización. Las solicitudes y las cuentas son locales y se reinician al cerrar la app; las fotos adjuntas se copian al directorio de datos de la app. En escritorio, la cámara requiere un dispositivo disponible y OpenCV (incluido en `requirements.txt`). La autenticación es demostrativa, no protege datos reales ni comparte solicitudes entre dispositivos; producción requiere un backend municipal con contraseñas seguras, permisos y geocodificación.
 
 ## Capturas de la app ejecutándose
 
