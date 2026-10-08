@@ -445,6 +445,12 @@ class RamaMobileApp(MDApp):
                 lambda account=worker: self._show_worker_dialog(account),
                 style="tonal",
             ))
+            if assigned_requests:
+                actions.add_widget(self._button(
+                    "Finalizar retiro",
+                    lambda rid=assigned_requests[0]["id"]: self._finalize_worker_request(rid),
+                    style="text",
+                ))
             actions.add_widget(self._button(
                 "Eliminar",
                 lambda account=worker: self._confirm_delete_worker(account),
@@ -614,6 +620,8 @@ class RamaMobileApp(MDApp):
                 primary_text, primary_status = "Iniciar", "in_progress"
             elif request["status"] == "pending":
                 primary_text, primary_status = "Reanudar", "in_progress"
+            elif request["status"] == "in_progress":
+                primary_text, primary_status = "Finalizar", "completed"
             else:
                 primary_text, primary_status = "Realizada", "completed"
             primary = self._button(
@@ -1027,6 +1035,19 @@ class RamaMobileApp(MDApp):
             self._show_dialog("No se pudo eliminar", str(error))
             return
         dialog.dismiss()
+        self.refresh_all()
+
+    def _finalize_worker_request(self, request_id: str) -> None:
+        if not self.current_user or self.current_user["role"] not in {"admin", "worker"}:
+            return
+        try:
+            request = self.service.get(request_id)
+            if request["status"] == "assigned":
+                self.service.transition(request_id, "in_progress")
+            self.service.transition(request_id, "completed")
+        except ValueError as error:
+            self._show_dialog("No se pudo finalizar", str(error))
+            return
         self.refresh_all()
 
     def _save_pending_reason(self, dialog, request_id: str, reason: str) -> None:

@@ -1,5 +1,6 @@
 import unittest
 
+from main import RamaMobileApp
 from request_service import RequestService, WORKERS
 
 
@@ -224,6 +225,35 @@ class RequestServiceTests(unittest.TestCase):
         )
         self.service.transition("RM-1048", "in_progress")
         self.assertEqual(self.service.get("RM-1048")["pending_reason"], "")
+
+    def test_worker_request_card_has_explicit_finalize_button_for_in_progress(self):
+        app = RamaMobileApp()
+        request = {
+            "id": "RM-2000",
+            "name": "Ana Pérez",
+            "phone": "5551234567",
+            "address": "Calle Falsa 123",
+            "neighborhood": "Centro",
+            "quantity": "1 montón",
+            "description": "Ramas pequeñas junto a la reja.",
+            "date": "2026-10-08",
+            "status": "in_progress",
+            "worker": WORKERS[0],
+            "pending_reason": "",
+        }
+
+        card = app._request_card(request, worker_actions=True)
+        texts = []
+
+        def collect(node):
+            if hasattr(node, "text") and isinstance(node.text, str):
+                texts.append(node.text)
+            for child in getattr(node, "children", ()):
+                collect(child)
+
+        collect(card)
+
+        self.assertIn("Finalizar", texts)
 
     def test_worker_route_is_ordered_by_neighborhood_and_address(self):
         self.service.transition("RM-1048", "accepted")
