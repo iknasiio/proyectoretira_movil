@@ -12,9 +12,9 @@ DEMO_USERS = (
     {"username": "mariana", "password": "mariana123", "name": "Mariana López", "phone": "555 010 2046", "role": "citizen"},
     {"username": "carlos", "password": "carlos123", "name": "Carlos Díaz", "phone": "555 010 2045", "role": "citizen"},
     {"username": "admin", "password": "admin123", "name": "Administración municipal", "role": "admin"},
-    {"username": "lucia", "password": "lucia123", "name": "Lucía Méndez", "role": "worker"},
-    {"username": "diego", "password": "diego123", "name": "Diego Rojas", "role": "worker"},
-    {"username": "mateo", "password": "mateo123", "name": "Mateo Silva", "role": "worker"},
+    {"username": "lucia", "password": "lucia123", "name": "Lucía Méndez", "phone": "555 010 2050", "role": "worker"},
+    {"username": "diego", "password": "diego123", "name": "Diego Rojas", "phone": "555 010 2051", "role": "worker"},
+    {"username": "mateo", "password": "mateo123", "name": "Mateo Silva", "phone": "555 010 2052", "role": "worker"},
 )
 STATUS_LABELS = {
     "submitted": "Por revisar",
@@ -150,14 +150,15 @@ class RequestService:
 
     def list_workers(self) -> list[dict[str, str]]:
         return [
-            {key: worker[key] for key in ("username", "name", "role")}
+            {key: worker[key] for key in ("username", "name", "role", "phone")}
             for worker in self.workers
         ]
 
     def create_worker(self, *, username: str, name: str,
-                      password: str) -> dict[str, str]:
+                      password: str, phone: str = "") -> dict[str, str]:
         normalized_username = username.strip().casefold()
         normalized_name = name.strip()
+        normalized_phone = phone.strip()
         if len(normalized_username) < 3 or not normalized_name:
             raise ValueError("El usuario debe tener al menos 3 caracteres y el nombre no puede estar vacío.")
         if len(password) < 6:
@@ -167,20 +168,25 @@ class RequestService:
         if any(worker["name"].casefold() == normalized_name.casefold()
                for worker in self.workers):
             raise ValueError("Ya existe un trabajador con ese nombre.")
+        if sum(character.isdigit() for character in normalized_phone) < 8:
+            raise ValueError("El teléfono debe tener al menos 8 dígitos.")
         worker = {
             "username": normalized_username,
             "password": password,
             "name": normalized_name,
+            "phone": normalized_phone,
             "role": "worker",
         }
         self.workers.append(worker)
-        return {key: worker[key] for key in ("username", "name", "role")}
+        self.accounts.append(worker)
+        return {key: worker[key] for key in ("username", "name", "role", "phone")}
 
     def update_worker(self, current_username: str, *, username: str,
-                      name: str, password: str = "") -> dict[str, str]:
+                      name: str, password: str = "", phone: str = "") -> dict[str, str]:
         worker = self._get_worker(current_username)
         normalized_username = username.strip().casefold()
         normalized_name = name.strip()
+        normalized_phone = phone.strip() if phone else worker.get("phone", "").strip()
         if len(normalized_username) < 3 or not normalized_name:
             raise ValueError("El usuario debe tener al menos 3 caracteres y el nombre no puede estar vacío.")
         if password and len(password) < 6:
@@ -192,17 +198,20 @@ class RequestService:
                 continue
             if other["name"].casefold() == normalized_name.casefold():
                 raise ValueError("Ya existe un trabajador con ese nombre.")
+        if sum(character.isdigit() for character in normalized_phone) < 8:
+            raise ValueError("El teléfono debe tener al menos 8 dígitos.")
 
         previous_name = worker["name"]
         worker["username"] = normalized_username
         worker["name"] = normalized_name
+        worker["phone"] = normalized_phone
         if password:
             worker["password"] = password
         if previous_name != normalized_name:
             for request in self.requests:
                 if request["worker"] == previous_name:
                     request["worker"] = normalized_name
-        return {key: worker[key] for key in ("username", "name", "role")}
+        return {key: worker[key] for key in ("username", "name", "role", "phone")}
 
     def delete_worker(self, username: str) -> None:
         worker = self._get_worker(username)

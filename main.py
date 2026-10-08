@@ -599,6 +599,11 @@ class RamaMobileApp(MDApp):
             mode="outlined", size_hint_y=None, height=dp(62),
             text=worker["name"] if worker else "",
         )
+        phone_field = MDTextField(
+            MDTextFieldHintText(text="Teléfono"),
+            mode="outlined", size_hint_y=None, height=dp(62),
+            text=worker["phone"] if worker else "",
+        )
         password_field = MDTextField(
             MDTextFieldHintText(
                 text="Nueva contraseña (opcional)" if worker
@@ -609,7 +614,7 @@ class RamaMobileApp(MDApp):
         cancel_button = MDButton(MDButtonText(text="Cancelar"), style="text")
         save_button = MDButton(MDButtonText(text="Guardar"), style="filled")
         content = MDDialogContentContainer(
-            username_field, name_field, password_field,
+            username_field, name_field, phone_field, password_field,
             orientation="vertical", padding=(dp(16), dp(8)),
         )
         dialog = MDDialog(
@@ -628,28 +633,29 @@ class RamaMobileApp(MDApp):
         cancel_button.bind(on_release=lambda *_args: dialog.dismiss())
         save_button.bind(on_release=lambda *_args: self._save_worker(
             dialog, worker, username_field.text, name_field.text,
-            password_field.text,
+            phone_field.text, password_field.text,
         ))
         self._bind_enter_navigation(
-            (username_field, name_field, password_field),
+            (username_field, name_field, phone_field, password_field),
             lambda: self._save_worker(
                 dialog, worker, username_field.text, name_field.text,
-                password_field.text,
+                phone_field.text, password_field.text,
             ),
         )
         dialog.open()
 
     def _save_worker(self, dialog, worker: dict[str, str] | None,
-                     username: str, name: str, password: str) -> None:
+                     username: str, name: str, phone: str, password: str) -> None:
         try:
             if worker:
                 self.service.update_worker(
                     worker["username"], username=username,
-                    name=name, password=password,
+                    name=name, phone=phone, password=password,
                 )
             else:
                 self.service.create_worker(
                     username=username, name=name, password=password,
+                    phone=phone,
                 )
         except ValueError as error:
             self._show_dialog("No se pudo guardar", str(error))

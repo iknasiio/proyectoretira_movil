@@ -96,11 +96,15 @@ class RequestServiceTests(unittest.TestCase):
 
     def test_admin_can_create_worker_and_worker_can_authenticate(self):
         worker = self.service.create_worker(
-            username="  sofia ", name="Sofía Pérez", password="ramas123",
+            username="  sofia ",
+            name="Sofía Pérez",
+            password="ramas123",
+            phone="555 010 2099",
         )
 
         self.assertEqual(worker["username"], "sofia")
         self.assertEqual(self.service.authenticate("SOFIA", "ramas123")["name"], "Sofía Pérez")
+        self.assertEqual(self.service.authenticate("SOFIA", "ramas123")["phone"], "555 010 2099")
         self.assertIn("Sofía Pérez", self.service.worker_names)
 
     def test_editing_worker_updates_credentials_and_existing_assignments(self):
@@ -108,14 +112,21 @@ class RequestServiceTests(unittest.TestCase):
         self.service.transition("RM-1048", "assigned", worker=WORKERS[0])
 
         self.service.update_worker(
-            "lucia", username="lucia-m", name="Lucía Méndez Rojas",
+            "lucia",
+            username="lucia-m",
+            name="Lucía Méndez Rojas",
             password="nuevo123",
+            phone="555 010 2999",
         )
 
         self.assertIsNone(self.service.authenticate("lucia", "lucia123"))
         self.assertEqual(
             self.service.authenticate("lucia-m", "nuevo123")["name"],
             "Lucía Méndez Rojas",
+        )
+        self.assertEqual(
+            self.service.authenticate("lucia-m", "nuevo123")["phone"],
+            "555 010 2999",
         )
         self.assertEqual(self.service.get("RM-1048")["worker"], "Lucía Méndez Rojas")
         self.assertEqual(
