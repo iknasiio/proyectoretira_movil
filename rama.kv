@@ -7,10 +7,14 @@
         spacing: 0
 
         MDTopAppBar:
+            id: top_app_bar
             type: "small"
+            size_hint_y: None
             md_bg_color: 0.09, 0.24, 0.19, 1
+            height: 0
+            opacity: 0
             MDTopAppBarTitle:
-                text: "Rama  ·  RETIRO DE PODA"
+                text: "EcoRamas"
                 theme_text_color: "Custom"
                 text_color: 1, 1, 1, 1
 
@@ -67,42 +71,41 @@
                 height: max(self.minimum_height, self.parent.height)
 
                 MDBoxLayout:
-                    size_hint_y: 0.2
-
-                MDBoxLayout:
                     orientation: "vertical"
                     size_hint_y: None
                     height: self.minimum_height
-                    padding: dp(20), dp(12), dp(20), dp(12)
-                    spacing: dp(8)
+                    padding: dp(20), dp(0), dp(20), dp(12)
+                    spacing: dp(10)
 
-                    MDLabel:
-                        text: "MUNICIPIO  ·  SERVICIOS PÚBLICOS"
+                    MDCard:
+                        style: "filled"
+                        orientation: "vertical"
                         size_hint_y: None
-                        height: dp(30)
-                        font_size: dp(13)
-                        bold: True
-                        theme_text_color: "Custom"
-                        text_color: 0.18, 0.28, 0.21, 1
+                        height: dp(92)
+                        padding: dp(14), dp(10)
+                        radius: [0, 0, 22, 22]
+                        md_bg_color: 0.03, 0.36, 0.30, 1
 
-                    MDLabel:
-                        text: "Retiro de poda"
-                        size_hint_y: None
-                        height: dp(42)
-                        font_size: dp(27)
-                        bold: True
-                        theme_text_color: "Custom"
-                        text_color: 0.11, 0.18, 0.15, 1
+                        MDLabel:
+                            text: "EcoRamas"
+                            size_hint_y: None
+                            height: dp(32)
+                            font_size: dp(30)
+                            bold: True
+                            theme_text_color: "Custom"
+                            text_color: 1, 1, 1, 1
 
-                    MDLabel:
-                        text: "Portal de atención ciudadana para coordinar el retiro de ramas y restos de poda."
+                        MDLabel:
+                            text: "el retiro en tus manos"
+                            size_hint_y: None
+                            height: dp(22)
+                            font_size: dp(15)
+                            theme_text_color: "Custom"
+                            text_color: 0.90, 0.95, 0.92, 1
+
+                    MDBoxLayout:
                         size_hint_y: None
-                        height: dp(54)
-                        font_size: dp(15)
-                        theme_text_color: "Custom"
-                        text_color: 0.29, 0.34, 0.30, 1
-                        text_size: self.width, None
-                        valign: "top"
+                        height: dp(64)
 
                     MDCard:
                         style: "outlined"

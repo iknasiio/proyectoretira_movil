@@ -67,6 +67,8 @@ class RamaMobileApp(MDApp):
 
     def on_start(self):
         self.root.ids.screen_manager.current = "login"
+        self.root.ids.top_app_bar.height = 0
+        self.root.ids.top_app_bar.opacity = 0
         self.root.ids.nav_bar.height = 0
         self.root.ids.nav_bar.opacity = 0
 
@@ -77,6 +79,8 @@ class RamaMobileApp(MDApp):
         if role_screen.get(self.current_user["role"]) != screen_name:
             return
         self.root.ids.screen_manager.current = screen_name
+        self.root.ids.top_app_bar.height = dp(64)
+        self.root.ids.top_app_bar.opacity = 1
         self.root.ids.session_user.text = self.current_user["name"]
         self.refresh_all()
 
@@ -109,6 +113,8 @@ class RamaMobileApp(MDApp):
         self.current_user = None
         self.root.ids.screen_manager.current = "login"
         self.root.ids.screen_manager.get_screen("login").ids.login_password.text = ""
+        self.root.ids.top_app_bar.height = 0
+        self.root.ids.top_app_bar.opacity = 0
         self.root.ids.nav_bar.height = 0
         self.root.ids.nav_bar.opacity = 0
 
