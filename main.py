@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import webbrowser
+from collections.abc import Callable
 from urllib.parse import urlencode
 
+from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.lang import Builder
 from kivy.metrics import dp
@@ -71,6 +73,34 @@ class RamaMobileApp(MDApp):
         self.root.ids.top_app_bar.opacity = 0
         self.root.ids.nav_bar.height = 0
         self.root.ids.nav_bar.opacity = 0
+        login = self.root.ids.screen_manager.get_screen("login")
+        self._bind_enter_navigation(
+            (login.ids.login_username, login.ids.login_password),
+            self.sign_in,
+        )
+        citizen = self.root.ids.screen_manager.get_screen("citizen")
+        self._bind_enter_navigation(
+            (citizen.ids.address, citizen.ids.neighborhood, citizen.ids.details),
+            self.submit_request,
+        )
+
+    @staticmethod
+    def _bind_enter_navigation(
+        fields: tuple[MDTextField, ...],
+        on_last: Callable[[], None],
+    ) -> None:
+        for index, field in enumerate(fields):
+            field.focus_next = fields[(index + 1) % len(fields)]
+            if index + 1 < len(fields):
+                next_field = fields[index + 1]
+                field.bind(
+                    on_text_validate=lambda _field, target=next_field:
+                    setattr(target, "focus", True),
+                )
+            else:
+                field.bind(
+                    on_text_validate=lambda *_args: on_last(),
+                )
 
     def navigate(self, screen_name: str) -> None:
         if not self.current_user:
@@ -173,6 +203,12 @@ class RamaMobileApp(MDApp):
         save_button.bind(on_release=lambda *_args: self._save_registration(
             dialog, username, password, confirm_password, name, email, phone,
         ))
+        self._bind_enter_navigation(
+            (username, name, email, phone, password, confirm_password),
+            lambda: self._save_registration(
+                dialog, username, password, confirm_password, name, email, phone,
+            ),
+        )
         dialog.open()
 
     def _save_registration(self, dialog, username, password, confirm_password,
@@ -225,6 +261,9 @@ class RamaMobileApp(MDApp):
         recover_button.bind(on_release=lambda *_args: self._recover_password(
             dialog, username,
         ))
+        self._bind_enter_navigation(
+            (username,), lambda: self._recover_password(dialog, username),
+        )
         dialog.open()
 
     def _recover_password(self, dialog, username) -> None:
@@ -260,6 +299,10 @@ class RamaMobileApp(MDApp):
         return button
 
     def _show_dialog(self, title: str, message: str) -> None:
+        for root_widget in Window.children:
+            for widget in root_widget.walk():
+                if isinstance(widget, MDTextField):
+                    widget.focus = False
         close_button = MDButton(
             MDButtonText(text="Entendido"), style="text", size_hint=(None, None),
             width=dp(120), height=dp(44),
@@ -270,7 +313,24 @@ class RamaMobileApp(MDApp):
             MDDialogButtonContainer(Widget(), close_button, spacing=dp(8)),
         )
         close_button.bind(on_release=lambda *_args: dialog.dismiss())
+
+        def dismiss_on_enter(_window, key, *_args):
+            if key in {13, 271}:
+                dialog.dismiss()
+                return True
+            return False
+
+        dialog.bind(
+            on_dismiss=lambda *_args: Window.unbind(
+                on_keyboard=dismiss_on_enter,
+            )
+        )
         dialog.open()
+        Clock.schedule_once(
+            lambda _dt: Window.bind(on_keyboard=dismiss_on_enter)
+            if dialog._is_open else None,
+            0,
+        )
 
     def refresh_all(self) -> None:
         if not hasattr(self, "service") or not self.root:
@@ -518,6 +578,12 @@ class RamaMobileApp(MDApp):
         save_button.bind(on_release=lambda *_args: self._save_pending_reason(
             dialog, request_id, reason_field.text,
         ))
+        self._bind_enter_navigation(
+            (reason_field,),
+            lambda: self._save_pending_reason(
+                dialog, request_id, reason_field.text,
+            ),
+        )
         dialog.open()
 
     def _show_worker_dialog(self, worker: dict[str, str] | None = None) -> None:
@@ -564,6 +630,13 @@ class RamaMobileApp(MDApp):
             dialog, worker, username_field.text, name_field.text,
             password_field.text,
         ))
+        self._bind_enter_navigation(
+            (username_field, name_field, password_field),
+            lambda: self._save_worker(
+                dialog, worker, username_field.text, name_field.text,
+                password_field.text,
+            ),
+        )
         dialog.open()
 
     def _save_worker(self, dialog, worker: dict[str, str] | None,

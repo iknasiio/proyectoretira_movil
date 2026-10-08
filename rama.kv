@@ -1,5 +1,8 @@
 #:import dp kivy.metrics.dp
 
+<MDTextField>:
+    write_tab: False
+
 <RamaRoot>:
     md_bg_color: 0.96, 0.97, 0.95, 1
     MDBoxLayout:
@@ -290,7 +293,7 @@
                         mode: "outlined"
                         size_hint_y: None
                         height: dp(86)
-                        multiline: True
+                        multiline: False
                         font_size: dp(16)
                         MDTextFieldHintText:
                             text: "Referencia del lugar (opcional)"
