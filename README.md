@@ -108,4 +108,4 @@ Para regenerarlas: `python capturar_pantallas.py`.
 
 ## Declaración de uso de IA
 
-Se utilizó GitHub Copilot como apoyo para estructurar y revisar código y documentación. El equipo debe revisar y adaptar el material, explicar la implementación y completar la fundamentación con resultados obtenidos directamente de participantes.
+La declaración detallada de uso, revisión y responsabilidades está en [usodeia.md](usodeia.md). El equipo debe comprobar que refleje fielmente el trabajo de todas las personas integrantes y completar por separado la fundamentación con resultados obtenidos directamente de participantes.
