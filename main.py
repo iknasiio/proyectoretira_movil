@@ -1,15 +1,19 @@
 from __future__ import annotations
 
+import os
 import shutil
 import webbrowser
 from collections.abc import Callable
 from pathlib import Path
+from threading import Thread
 from urllib.parse import urlencode
 from uuid import uuid4
 
 from kivy.clock import Clock
 from kivy.core.window import Window
+from kivy.graphics import Color, RoundedRectangle
 from kivy.lang import Builder
+from kivy.logger import Logger
 from kivy.metrics import dp
 from kivy.uix.camera import Camera
 from kivy.uix.filechooser import FileChooserListView
@@ -32,10 +36,17 @@ from kivymd.uix.dialog import (
     MDDialogSupportingText,
 )
 from kivymd.uix.label import MDLabel
-from kivymd.uix.textfield import MDTextField, MDTextFieldHintText
 from kivymd.uix.screen import MDScreen
+from kivymd.uix.textfield import MDTextField, MDTextFieldHintText
 from PIL import Image as PillowImage
+from requests.exceptions import RequestException
 
+from remote_config import (
+    DEFAULT_REMOTE_CONFIG,
+    DEFAULT_REMOTE_CONFIG_URL,
+    RemoteConfigError,
+    fetch_remote_config,
+)
 from request_service import RequestService, STATUS_LABELS
 
 FOREST = "#173E31"
@@ -70,7 +81,13 @@ class RamaMobileApp(MDApp):
         self.theme_cls.primary_palette = "Green"
         if platform not in {"android", "ios"}:
             Window.size = (430, 850)
-        self.service = RequestService()
+        self.service = RequestService(
+            Path(self.user_data_dir) / "rama_data.json",
+        )
+        self.remote_config = DEFAULT_REMOTE_CONFIG.copy()
+        self.remote_config_url = os.environ.get(
+            "RAMA_REMOTE_CONFIG_URL", DEFAULT_REMOTE_CONFIG_URL,
+        )
         self.current_user = None
         self.selected_photo_path = ""
         self.editing_request_id = None
@@ -83,6 +100,11 @@ class RamaMobileApp(MDApp):
         self.root.ids.nav_bar.height = 0
         self.root.ids.nav_bar.opacity = 0
         login = self.root.ids.screen_manager.get_screen("login")
+        login.ids.remote_announcement.text = self.remote_config["announcement"]
+        login.ids.remote_config_status.text = (
+            "Configuración local activa · consultando valor remoto…"
+        )
+        Thread(target=self._fetch_remote_config, daemon=True).start()
         self._bind_enter_navigation(
             (login.ids.login_username, login.ids.login_password),
             self.sign_in,
@@ -91,6 +113,74 @@ class RamaMobileApp(MDApp):
         self._bind_enter_navigation(
             (citizen.ids.address, citizen.ids.neighborhood, citizen.ids.details),
             self.submit_request,
+        )
+
+    def _fetch_remote_config(self) -> None:
+        try:
+            config = fetch_remote_config(self.remote_config_url)
+        except (RemoteConfigError, RequestException) as error:
+            Logger.warning(
+                f"Rama: configuración remota no disponible: {error}"
+            )
+            Clock.schedule_once(
+                lambda _dt, message=str(error):
+                self._use_default_remote_config(message),
+                0,
+            )
+            return
+        Clock.schedule_once(
+            lambda _dt: self._apply_remote_config(config),
+            0,
+        )
+
+    def _apply_remote_config(self, config: dict[str, str]) -> None:
+        self.remote_config = config
+        login = self.root.ids.screen_manager.get_screen("login")
+        login.ids.remote_announcement.text = config["announcement"]
+        login.ids.remote_config_status.text = (
+            f"Configuración remota · {config['municipality']}"
+        )
+
+    def _use_default_remote_config(self, reason: str) -> None:
+        Logger.warning(f"Rama: se conserva la configuración local: {reason}")
+        login = self.root.ids.screen_manager.get_screen("login")
+        login.ids.remote_announcement.text = (
+            self.remote_config["announcement"]
+        )
+        login.ids.remote_config_status.text = (
+            "Sin conexión remota · se usan los valores locales."
+        )
+
+    def _notify(self, message: str) -> None:
+        notification = MDLabel(
+            text=message,
+            size_hint=(0.9, None),
+            height=dp(52),
+            pos_hint={"center_x": 0.5, "y": 0.025},
+            font_size=dp(14),
+            halign="center",
+            valign="middle",
+            text_size=(Window.width * 0.85, None),
+            theme_text_color="Custom",
+            text_color=(1, 1, 1, 1),
+        )
+        with notification.canvas.before:
+            Color(*get_color_from_hex(FOREST))
+            background = RoundedRectangle(
+                pos=notification.pos,
+                size=notification.size,
+                radius=[dp(8)],
+            )
+        notification.bind(
+            pos=lambda widget, _value: setattr(background, "pos", widget.pos),
+            size=lambda widget, _value: setattr(background, "size", widget.size),
+        )
+        root = self.root
+        root.add_widget(notification)
+        Clock.schedule_once(
+            lambda _dt: root.remove_widget(notification)
+            if notification.parent is root else None,
+            3.5,
         )
 
     @staticmethod
@@ -232,7 +322,7 @@ class RamaMobileApp(MDApp):
                 email=email.text,
                 phone=phone.text,
             )
-        except ValueError as error:
+        except (ValueError, OSError) as error:
             self._show_dialog("No se pudo registrar", str(error))
             return
         dialog.dismiss()
@@ -874,7 +964,7 @@ class RamaMobileApp(MDApp):
             request = self.service.delete_request(
                 request_id, citizen_name=self.current_user["name"],
             )
-        except ValueError as error:
+        except (ValueError, OSError) as error:
             dialog.dismiss()
             self._show_dialog("No se pudo eliminar", str(error))
             return
@@ -1001,7 +1091,7 @@ class RamaMobileApp(MDApp):
                     username=username, name=name, password=password,
                     phone=phone,
                 )
-        except ValueError as error:
+        except (ValueError, OSError) as error:
             self._show_dialog("No se pudo guardar", str(error))
             return
         dialog.dismiss()
@@ -1045,10 +1135,11 @@ class RamaMobileApp(MDApp):
             if request["status"] == "assigned":
                 self.service.transition(request_id, "in_progress")
             self.service.transition(request_id, "completed")
-        except ValueError as error:
+        except (ValueError, OSError) as error:
             self._show_dialog("No se pudo finalizar", str(error))
             return
         self.refresh_all()
+        self._notify(f"Retiro {request_id} finalizado.")
 
     def _save_pending_reason(self, dialog, request_id: str, reason: str) -> None:
         if len(reason.strip()) < 4:
@@ -1066,7 +1157,8 @@ class RamaMobileApp(MDApp):
             self._show_dialog("Sin paradas", "No tienes solicitudes asignadas para abrir una ruta.")
             return
         locations = [
-            f"{stop['address']}, {stop['neighborhood']}, Temuco, Chile"
+            f"{stop['address']}, {stop['neighborhood']}, "
+            f"{self.remote_config['municipality']}"
             for stop in stops
         ]
         params = {
@@ -1130,15 +1222,12 @@ class RamaMobileApp(MDApp):
                     description=description,
                 )
                 success_message = f"Registramos {request['id']}. Administración la revisará."
-        except ValueError as error:
+        except (ValueError, OSError) as error:
             self._show_dialog("No se pudo enviar", str(error))
             return
         self._clear_request_form()
         self.refresh_all()
-        self._show_dialog(
-            "Solicitud actualizada" if was_editing else "Solicitud enviada",
-            success_message,
-        )
+        self._notify(success_message)
 
     def _assign(self, request_id: str, worker: str) -> None:
         if not self.current_user or self.current_user["role"] != "admin":
@@ -1158,10 +1247,16 @@ class RamaMobileApp(MDApp):
             return
         try:
             self.service.transition(request_id, status, worker=worker, reason=reason)
-        except ValueError as error:
+        except (ValueError, OSError) as error:
             self._show_dialog("No se pudo actualizar", str(error))
             return
         self.refresh_all()
+        request = self.service.get(request_id)
+        if status == "assigned":
+            message = f"Solicitud {request_id} asignada a {request['worker']}."
+        else:
+            message = f"{request_id}: {STATUS_LABELS[status].lower()}."
+        self._notify(message)
 
 
 if __name__ == "__main__":

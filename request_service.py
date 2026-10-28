@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
+import json
+import os
+import tempfile
 from datetime import date
+from pathlib import Path
 from typing import Any
 
 WORKERS = ("Lucía Méndez", "Diego Rojas", "Mateo Silva")
@@ -91,15 +96,139 @@ _TRANSITIONS = {
 
 
 class RequestService:
-    """Manage the in-memory requests used during the application demo."""
+    """Manage requests and accounts, optionally persisting them as local JSON."""
 
-    def __init__(self):
+    def __init__(self, data_path: str | Path | None = None):
+        self.data_path = Path(data_path) if data_path is not None else None
+        if self.data_path and self.data_path.exists():
+            self._load()
+            return
+
         self.requests = [request.copy() for request in INITIAL_REQUESTS]
-        self.accounts = [dict(account) for account in DEMO_USERS]
+        self.accounts = [
+            dict(account) for account in DEMO_USERS
+            if account["role"] != "worker"
+        ]
         self.workers = [
-            account.copy() for account in DEMO_USERS
+            dict(account) for account in DEMO_USERS
             if account["role"] == "worker"
         ]
+        self._save()
+
+    def _load(self) -> None:
+        data_path = self.data_path
+        if data_path is None:
+            raise RuntimeError("No se configuró la ruta de los datos locales.")
+        try:
+            data = json.loads(data_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as error:
+            raise RuntimeError(
+                f"No se pudieron cargar los datos locales de {data_path}."
+            ) from error
+        if (
+            not isinstance(data, dict)
+            or data.get("version") != 1
+            or not isinstance(data.get("requests"), list)
+            or not isinstance(data.get("accounts"), list)
+            or not isinstance(data.get("workers"), list)
+            or not all(isinstance(item, dict) for item in data["requests"])
+            or not all(isinstance(item, dict) for item in data["accounts"])
+            or not all(isinstance(item, dict) for item in data["workers"])
+        ):
+            raise RuntimeError(
+                f"Los datos locales de {data_path} tienen un formato no compatible."
+            )
+        required_request_fields = {
+            "id", "name", "phone", "address", "neighborhood",
+            "quantity", "date", "status", "worker",
+        }
+        valid_requests = all(
+            required_request_fields.issubset(request)
+            and all(isinstance(request[key], str) for key in required_request_fields)
+            and request["status"] in STATUS_LABELS
+            for request in data["requests"]
+        )
+        required_account_fields = {"username", "password", "name", "role"}
+        valid_accounts = all(
+            required_account_fields.issubset(account)
+            and all(isinstance(account[key], str) for key in required_account_fields)
+            and account["role"] in {"citizen", "admin"}
+            for account in data["accounts"]
+        )
+        valid_workers = all(
+            required_account_fields.issubset(worker)
+            and all(isinstance(worker[key], str) for key in required_account_fields)
+            and worker["role"] == "worker"
+            for worker in data["workers"]
+        )
+        if not (valid_requests and valid_accounts and valid_workers):
+            raise RuntimeError(
+                f"Los datos locales de {data_path} contienen registros inválidos."
+            )
+        self.requests = data["requests"]
+        self.workers = data["workers"]
+        self.accounts = data["accounts"] + self.workers
+        self._saved_state = self._snapshot()
+
+    def _snapshot(
+        self,
+    ) -> tuple[list[dict[str, Any]], list[dict[str, str]], list[dict[str, str]]]:
+        return deepcopy((self.requests, self.accounts, self.workers))
+
+    def _restore_snapshot(
+        self,
+        snapshot: tuple[
+            list[dict[str, Any]],
+            list[dict[str, str]],
+            list[dict[str, str]],
+        ],
+    ) -> None:
+        self.requests, self.accounts, self.workers = deepcopy(snapshot)
+
+    def _save(self) -> None:
+        data_path = self.data_path
+        if data_path is None:
+            return
+        saved_state = getattr(self, "_saved_state", None)
+        temporary_path = None
+        try:
+            data_path.parent.mkdir(parents=True, exist_ok=True)
+            data = {
+                "version": 1,
+                "requests": self.requests,
+                "accounts": [
+                    account for account in self.accounts
+                    if account["role"] != "worker"
+                ],
+                "workers": self.workers,
+            }
+            with tempfile.NamedTemporaryFile(
+                "w",
+                encoding="utf-8",
+                dir=data_path.parent,
+                prefix=f"{data_path.name}.",
+                suffix=".tmp",
+                delete=False,
+            ) as temporary_file:
+                temporary_path = Path(temporary_file.name)
+                json.dump(data, temporary_file, ensure_ascii=False, indent=2)
+                temporary_file.write("\n")
+            if temporary_path is None:
+                raise RuntimeError("No se creó el archivo temporal de datos.")
+            os.replace(temporary_path, data_path)
+        except (OSError, TypeError) as error:
+            if saved_state is not None:
+                self._restore_snapshot(saved_state)
+            if temporary_path is not None:
+                try:
+                    temporary_path.unlink(missing_ok=True)
+                except OSError as cleanup_error:
+                    raise OSError(
+                        f"{error} Además, no se pudo limpiar "
+                        f"{temporary_path}: {cleanup_error}"
+                    ) from cleanup_error
+            raise
+        self._saved_state = self._snapshot()
 
     @property
     def worker_names(self) -> tuple[str, ...]:
@@ -138,6 +267,7 @@ class RequestService:
             "role": "citizen",
         }
         self.accounts.append(account)
+        self._save()
         return account
 
     def recover_password(self, username: str) -> str | None:
@@ -179,6 +309,7 @@ class RequestService:
         }
         self.workers.append(worker)
         self.accounts.append(worker)
+        self._save()
         return {key: worker[key] for key in ("username", "name", "role", "phone")}
 
     def update_worker(self, current_username: str, *, username: str,
@@ -211,6 +342,7 @@ class RequestService:
             for request in self.requests:
                 if request["worker"] == previous_name:
                     request["worker"] = normalized_name
+        self._save()
         return {key: worker[key] for key in ("username", "name", "role", "phone")}
 
     def delete_worker(self, username: str) -> None:
@@ -223,6 +355,11 @@ class RequestService:
         ):
             raise ValueError("No se puede eliminar: el trabajador tiene retiros activos asignados.")
         self.workers.remove(worker)
+        self.accounts = [
+            account for account in self.accounts
+            if account["username"] != worker["username"]
+        ]
+        self._save()
 
     def _get_worker(self, username: str) -> dict[str, str]:
         normalized_username = username.strip().casefold()
@@ -236,7 +373,7 @@ class RequestService:
     ) -> bool:
         if any(
             account["username"] == username and account["role"] != "worker"
-            for account in DEMO_USERS
+            for account in self.accounts
         ):
             return False
         return not any(
@@ -274,6 +411,7 @@ class RequestService:
             "worker": "",
         }
         self.requests.insert(0, request)
+        self._save()
         return request
 
     def update_request(self, request_id: str, *, citizen_name: str,
@@ -296,6 +434,7 @@ class RequestService:
             "description": description.strip(),
             "photo_path": photo_path,
         })
+        self._save()
         return request
 
     def delete_request(self, request_id: str, *, citizen_name: str) -> dict[str, Any]:
@@ -303,6 +442,7 @@ class RequestService:
         if request["name"].strip().casefold() != citizen_name.strip().casefold():
             raise ValueError("No tienes permiso para eliminar esta solicitud.")
         self.requests.remove(request)
+        self._save()
         return request
 
     def transition(self, request_id: str, status: str, *, worker: str = "",
@@ -321,6 +461,7 @@ class RequestService:
         elif status in {"in_progress", "completed"}:
             request["pending_reason"] = ""
         request["status"] = status
+        self._save()
         return request
 
     def get(self, request_id: str) -> dict[str, Any]:

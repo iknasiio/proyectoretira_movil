@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import Mock
 
 from main import RamaMobileApp
 from request_service import RequestService, WORKERS
@@ -254,6 +255,17 @@ class RequestServiceTests(unittest.TestCase):
         collect(card)
 
         self.assertIn("Finalizar", texts)
+
+    def test_status_change_shows_a_local_notification(self):
+        app = RamaMobileApp()
+        app.service = RequestService()
+        app.current_user = {"role": "admin"}
+        app._notify = Mock()
+
+        app._change_status("RM-1048", "accepted")
+
+        self.assertEqual(app.service.get("RM-1048")["status"], "accepted")
+        app._notify.assert_called_once_with("RM-1048: aceptada.")
 
     def test_worker_route_is_ordered_by_neighborhood_and_address(self):
         self.service.transition("RM-1048", "accepted")
