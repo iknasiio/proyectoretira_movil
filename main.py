@@ -3,8 +3,10 @@ from __future__ import annotations
 import os
 import shutil
 import webbrowser
+import tkinter as tk
 from collections.abc import Callable
 from pathlib import Path
+from tkinter import filedialog
 from threading import Thread
 from urllib.parse import urlencode
 from uuid import uuid4
@@ -811,11 +813,40 @@ class RamaMobileApp(MDApp):
             self._remove_stored_photo(previous_photo)
         citizen = self.root.ids.screen_manager.get_screen("citizen")
         citizen.ids.photo_status.text = (
-            f"Foto adjunta: {Path(self.selected_photo_path).name}"
+            "Foto seleccionada correctamente"
         )
+        citizen.ids.photo_preview.source = self.selected_photo_path
+        citizen.ids.photo_preview_card.height = dp(150)
+        citizen.ids.photo_preview_card.opacity = 1
+        citizen.ids.photo_preview_card.disabled = False
         return True
 
     def choose_request_photo(self) -> None:
+        if platform not in {"android", "ios"}:
+            root = tk.Tk()
+            root.withdraw()
+            root.attributes("-topmost", True)
+            initial_dir = Path.home() / "Pictures"
+            if not initial_dir.is_dir():
+                initial_dir = Path.home() / "Downloads"
+            if not initial_dir.is_dir():
+                initial_dir = Path.home()
+            try:
+                selection = filedialog.askopenfilename(
+                    parent=root,
+                    title="Selecciona una foto",
+                    initialdir=str(initial_dir),
+                    filetypes=[
+                        ("Imágenes", "*.jpg *.jpeg *.png *.webp"),
+                        ("Todos los archivos", "*.*"),
+                    ],
+                )
+            finally:
+                root.destroy()
+            if selection:
+                self._set_selected_photo(selection)
+            return
+
         chooser = FileChooserListView(
             path=str(Path.home()),
             filters=["*.jpg", "*.jpeg", "*.png", "*.webp"],
@@ -929,10 +960,18 @@ class RamaMobileApp(MDApp):
         self.editing_request_id = request_id
         self.editing_original_photo = request.get("photo_path", "")
         self.selected_photo_path = self.editing_original_photo
-        fields.photo_status.text = (
-            f"Foto adjunta: {Path(self.selected_photo_path).name}"
-            if self.selected_photo_path else "Foto obligatoria: elige o toma una foto."
-        )
+        if self.selected_photo_path:
+            fields.photo_status.text = "Foto seleccionada correctamente"
+            fields.photo_preview.source = self.selected_photo_path
+            fields.photo_preview_card.height = dp(150)
+            fields.photo_preview_card.opacity = 1
+            fields.photo_preview_card.disabled = False
+        else:
+            fields.photo_status.text = "Foto obligatoria: elige o toma una foto."
+            fields.photo_preview.source = ""
+            fields.photo_preview_card.height = 0
+            fields.photo_preview_card.opacity = 0
+            fields.photo_preview_card.disabled = True
         fields.submit_request_button_text.text = "Guardar cambios"
         fields.cancel_edit_button.disabled = False
         fields.cancel_edit_button.opacity = 1
@@ -951,6 +990,10 @@ class RamaMobileApp(MDApp):
         screen.ids.quantity.text = "Selecciona cantidad"
         screen.ids.details.text = ""
         screen.ids.photo_status.text = "Foto obligatoria: elige o toma una foto."
+        screen.ids.photo_preview.source = ""
+        screen.ids.photo_preview_card.height = 0
+        screen.ids.photo_preview_card.opacity = 0
+        screen.ids.photo_preview_card.disabled = True
         screen.ids.submit_request_button_text.text = "Enviar solicitud"
         screen.ids.cancel_edit_button.disabled = True
         screen.ids.cancel_edit_button.opacity = 0
