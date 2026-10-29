@@ -12,14 +12,14 @@ from typing import Any
 
 WORKERS = ("Lucía Méndez", "Diego Rojas", "Mateo Silva")
 DEMO_USERS = (
-    {"username": "elena", "password": "elena123", "name": "Elena Martínez", "phone": "555 010 2048", "role": "citizen"},
-    {"username": "javier", "password": "javier123", "name": "Javier Torres", "phone": "555 010 2047", "role": "citizen"},
-    {"username": "mariana", "password": "mariana123", "name": "Mariana López", "phone": "555 010 2046", "role": "citizen"},
-    {"username": "carlos", "password": "carlos123", "name": "Carlos Díaz", "phone": "555 010 2045", "role": "citizen"},
-    {"username": "admin", "password": "admin123", "name": "Administración municipal", "role": "admin"},
-    {"username": "lucia", "password": "lucia123", "name": "Lucía Méndez", "phone": "555 010 2050", "role": "worker"},
-    {"username": "diego", "password": "diego123", "name": "Diego Rojas", "phone": "555 010 2051", "role": "worker"},
-    {"username": "mateo", "password": "mateo123", "name": "Mateo Silva", "phone": "555 010 2052", "role": "worker"},
+    {"username": "elena", "password": "elena123", "name": "Elena Martínez", "email": "elena@example.com", "phone": "555 010 2048", "role": "citizen"},
+    {"username": "javier", "password": "javier123", "name": "Javier Torres", "email": "javier@example.com", "phone": "555 010 2047", "role": "citizen"},
+    {"username": "mariana", "password": "mariana123", "name": "Mariana López", "email": "mariana@example.com", "phone": "555 010 2046", "role": "citizen"},
+    {"username": "carlos", "password": "carlos123", "name": "Carlos Díaz", "email": "carlos@example.com", "phone": "555 010 2045", "role": "citizen"},
+    {"username": "admin", "password": "admin123", "name": "Administración municipal", "email": "admin@example.com", "role": "admin"},
+    {"username": "lucia", "password": "lucia123", "name": "Lucía Méndez", "email": "lucia@example.com", "phone": "555 010 2050", "role": "worker"},
+    {"username": "diego", "password": "diego123", "name": "Diego Rojas", "email": "diego@example.com", "phone": "555 010 2051", "role": "worker"},
+    {"username": "mateo", "password": "mateo123", "name": "Mateo Silva", "email": "mateo@example.com", "phone": "555 010 2052", "role": "worker"},
 )
 STATUS_LABELS = {
     "submitted": "Por revisar",
@@ -270,13 +270,25 @@ class RequestService:
         self._save()
         return account
 
-    def recover_password(self, username: str) -> str | None:
+    def recovery_account(self, username: str) -> dict[str, str] | None:
         normalized_username = username.strip().casefold()
+        if not normalized_username:
+            return None
         account = next(
-            (item for item in self.accounts if item["username"] == normalized_username),
+            (
+                item
+                for item in self.accounts + self.workers
+                if item["username"] == normalized_username
+            ),
             None,
         )
-        return account["password"] if account else None
+        if account is None:
+            return None
+        return {
+            key: account[key]
+            for key in ("username", "name", "email", "role")
+            if key in account
+        }
 
     def list_workers(self) -> list[dict[str, str]]:
         return [

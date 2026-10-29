@@ -369,17 +369,43 @@ class RamaMobileApp(MDApp):
         dialog.open()
 
     def _recover_password(self, dialog, username) -> None:
-        password = self.service.recover_password(username.text)
         dialog.dismiss()
-        if password is None:
+        normalized_username = username.text.strip()
+        if not normalized_username:
             self._show_dialog(
-                "Usuario no encontrado",
-                "No existe una cuenta con ese usuario en este sistema local.",
+                "Usuario requerido",
+                "Escribe el usuario de tu cuenta. No se envió ningún enlace.",
             )
             return
+        account = self.service.recovery_account(normalized_username)
+        if account is None:
+            self._show_dialog(
+                "Usuario no encontrado",
+                "Ese usuario no existe. No se envió ningún enlace.",
+            )
+            return
+        email = account.get("email", "").strip()
+        if email:
+            local_part, separator, domain = email.partition("@")
+            masked_email = (
+                f"{local_part[:1]}***{separator}{domain}"
+                if separator and local_part and domain
+                else email
+            )
+            message = (
+                f"Se envió un enlace a tu correo {masked_email} "
+                "para cambiar la contraseña."
+            )
+            title = "Enlace enviado"
+        else:
+            message = (
+                "El usuario existe, pero esta cuenta no tiene un correo "
+                "registrado. No se pudo enviar el enlace."
+            )
+            title = "Correo no registrado"
         self._show_dialog(
-            "Contraseña recuperada",
-            f"Tu contraseña es: {password}. Cambiála después de iniciar sesión.",
+            title,
+            message,
         )
 
     def _label(self, text: str, *, size: int = 15, color_hex: str = INK,

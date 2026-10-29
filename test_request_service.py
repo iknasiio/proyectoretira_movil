@@ -138,7 +138,11 @@ class RequestServiceTests(unittest.TestCase):
             self.service.authenticate("SOFIA", "sofia123")["name"],
             "Sofía Ramírez",
         )
-        self.assertEqual(self.service.recover_password("sofia"), "sofia123")
+        recovered_account = self.service.recovery_account("SOFIA")
+        self.assertEqual(recovered_account["username"], "sofia")
+        self.assertEqual(recovered_account["email"], "sofia@example.com")
+        self.assertNotIn("password", recovered_account)
+        self.assertIsNone(self.service.recovery_account("usuario-inexistente"))
 
     def test_registration_rejects_duplicate_usernames(self):
         with self.assertRaises(ValueError):
