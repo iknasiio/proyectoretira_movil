@@ -400,19 +400,31 @@ class RamaMobileApp(MDApp):
         style: str = "filled",
         background_color: str | None = None,
         text_color: str | None = None,
-        theme_width: str = "Primary",
+        theme_width: str = "Custom",
     ) -> MDButton:
         button = MDButton(
             style=style, theme_width=theme_width,
             size_hint=(1, None), height=dp(44),
         )
+        button.theme_bg_color = "Custom"
         if background_color:
-            button.theme_bg_color = "Custom"
             button.md_bg_color = get_color_from_hex(background_color)
+        elif style == "filled":
+            button.md_bg_color = get_color_from_hex(FOREST)
+        elif style == "tonal":
+            button.md_bg_color = get_color_from_hex("#E4ECE6")
+        else:
+            button.md_bg_color = get_color_from_hex("#FDFEFD")
         button_text = MDButtonText(text=text, font_size=dp(14))
         if text_color:
             button_text.theme_text_color = "Custom"
             button_text.text_color = get_color_from_hex(text_color)
+        elif style == "filled":
+            button_text.theme_text_color = "Custom"
+            button_text.text_color = get_color_from_hex("#FFFFFF")
+        else:
+            button_text.theme_text_color = "Custom"
+            button_text.text_color = get_color_from_hex(FOREST)
         button.add_widget(button_text)
         button.bind(on_release=lambda *_args: callback())
         return button

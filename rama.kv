@@ -1,5 +1,19 @@
 #:import dp kivy.metrics.dp
 
+<MDButton>:
+    theme_width: "Custom"
+    theme_bg_color: "Custom"
+    md_bg_color:
+        (0.09, 0.24, 0.19, 1) if self.style == "filled" else \
+        (0.89, 0.93, 0.90, 1) if self.style in ("tonal", "elevated") else \
+        (1, 1, 1, 0)
+
+<MDButtonText>:
+    theme_text_color: "Custom"
+    text_color:
+        (1, 1, 1, 1) if self._button and self._button.style == "filled" else \
+        (0.09, 0.24, 0.19, 1)
+
 <MDTextField>:
     write_tab: False
 
