@@ -281,8 +281,8 @@ class RamaMobileApp(MDApp):
         fields.add_widget(password)
         fields.add_widget(confirm_password)
 
-        cancel_button = MDButton(MDButtonText(text="Cancelar"), style="text")
-        save_button = MDButton(MDButtonText(text="Crear cuenta"), style="filled")
+        cancel_button = self._dialog_button("Cancelar", style="text", width=110)
+        save_button = self._dialog_button("Crear cuenta", style="filled", width=150)
         button_container = MDDialogButtonContainer(
             Widget(), cancel_button, save_button, spacing=dp(8),
         )
@@ -338,8 +338,8 @@ class RamaMobileApp(MDApp):
             MDTextFieldHintText(text="Usuario"), mode="outlined",
             size_hint_y=None, height=dp(64),
         )
-        cancel_button = MDButton(MDButtonText(text="Cancelar"), style="text")
-        recover_button = MDButton(MDButtonText(text="Recuperar"), style="filled")
+        cancel_button = self._dialog_button("Cancelar", style="text", width=110)
+        recover_button = self._dialog_button("Recuperar", style="filled", width=130)
         button_container = MDDialogButtonContainer(
             Widget(), cancel_button, recover_button, spacing=dp(8),
         )
@@ -443,15 +443,46 @@ class RamaMobileApp(MDApp):
         button.bind(on_release=lambda *_args: callback())
         return button
 
+    def _dialog_button(
+        self,
+        text: str,
+        *,
+        style: str = "filled",
+        width: int = 120,
+    ) -> MDButton:
+        button_text = MDButtonText(text=text, font_size=dp(14))
+        button = MDButton(
+            button_text,
+            style=style,
+            theme_width="Custom",
+            size_hint=(None, None),
+            width=dp(width),
+            height=dp(44),
+        )
+        button.theme_bg_color = "Custom"
+        if style == "filled":
+            button.md_bg_color = get_color_from_hex(FOREST)
+            button_text.theme_text_color = "Custom"
+            button_text.text_color = get_color_from_hex("#FFFFFF")
+            button_text.disabled_color = get_color_from_hex("#FFFFFF")
+        elif style == "tonal":
+            button.md_bg_color = get_color_from_hex("#E4ECE6")
+            button_text.theme_text_color = "Custom"
+            button_text.text_color = get_color_from_hex(FOREST)
+            button_text.disabled_color = get_color_from_hex(FOREST)
+        else:
+            button.md_bg_color = get_color_from_hex("#FFFFFF")
+            button_text.theme_text_color = "Custom"
+            button_text.text_color = get_color_from_hex(FOREST)
+            button_text.disabled_color = get_color_from_hex(FOREST)
+        return button
+
     def _show_dialog(self, title: str, message: str) -> None:
         for root_widget in Window.children:
             for widget in root_widget.walk():
                 if isinstance(widget, MDTextField):
                     widget.focus = False
-        close_button = MDButton(
-            MDButtonText(text="Entendido"), style="text", size_hint=(None, None),
-            width=dp(120), height=dp(44),
-        )
+        close_button = self._dialog_button("Entendido", style="text", width=120)
         dialog = MDDialog(
             MDDialogHeadlineText(text=title),
             MDDialogSupportingText(text=message),
@@ -1011,8 +1042,8 @@ class RamaMobileApp(MDApp):
         except ValueError as error:
             self._show_dialog("No se pudo eliminar", str(error))
             return
-        cancel_button = MDButton(MDButtonText(text="Cancelar"), style="text")
-        delete_button = MDButton(MDButtonText(text="Borrar solicitud"), style="tonal")
+        cancel_button = self._dialog_button("Cancelar", style="text", width=110)
+        delete_button = self._dialog_button("Borrar solicitud", style="tonal", width=150)
         dialog = MDDialog(
             MDDialogHeadlineText(text="Borrar solicitud"),
             MDDialogSupportingText(
@@ -1066,8 +1097,8 @@ class RamaMobileApp(MDApp):
             MDTextFieldHintText(text="Motivo (obligatorio)"),
             mode="outlined", size_hint_y=None, height=dp(62),
         )
-        cancel_button = MDButton(MDButtonText(text="Cancelar"), style="text")
-        save_button = MDButton(MDButtonText(text="Guardar"), style="filled")
+        cancel_button = self._dialog_button("Cancelar", style="text", width=110)
+        save_button = self._dialog_button("Guardar", style="filled", width=130)
         button_container = MDDialogButtonContainer(
             Widget(), cancel_button, save_button, spacing=dp(8),
         )
@@ -1117,8 +1148,8 @@ class RamaMobileApp(MDApp):
             ),
             mode="outlined", size_hint_y=None, height=dp(62), password=True,
         )
-        cancel_button = MDButton(MDButtonText(text="Cancelar"), style="text")
-        save_button = MDButton(MDButtonText(text="Guardar"), style="filled")
+        cancel_button = self._dialog_button("Cancelar", style="text", width=110)
+        save_button = self._dialog_button("Guardar", style="filled", width=130)
         content = MDDialogContentContainer(
             username_field, name_field, phone_field, password_field,
             orientation="vertical", padding=(dp(16), dp(8)),
@@ -1172,8 +1203,8 @@ class RamaMobileApp(MDApp):
     def _confirm_delete_worker(self, worker: dict[str, str]) -> None:
         if not self.current_user or self.current_user["role"] != "admin":
             return
-        cancel_button = MDButton(MDButtonText(text="Cancelar"), style="text")
-        delete_button = MDButton(MDButtonText(text="Eliminar"), style="tonal")
+        cancel_button = self._dialog_button("Cancelar", style="text", width=110)
+        delete_button = self._dialog_button("Eliminar", style="tonal", width=130)
         dialog = MDDialog(
             MDDialogHeadlineText(text="Eliminar trabajador"),
             MDDialogSupportingText(
