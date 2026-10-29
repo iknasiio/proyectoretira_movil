@@ -428,12 +428,15 @@ class RamaMobileApp(MDApp):
         if text_color:
             button_text.theme_text_color = "Custom"
             button_text.text_color = get_color_from_hex(text_color)
+            button_text.disabled_color = get_color_from_hex(text_color)
         elif style == "filled":
             button_text.theme_text_color = "Custom"
             button_text.text_color = get_color_from_hex("#FFFFFF")
+            button_text.disabled_color = get_color_from_hex("#FFFFFF")
         else:
             button_text.theme_text_color = "Custom"
             button_text.text_color = get_color_from_hex(FOREST)
+            button_text.disabled_color = get_color_from_hex(FOREST)
         button.add_widget(button_text)
         button.bind(on_release=lambda *_args: callback())
         return button
