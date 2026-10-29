@@ -36,6 +36,12 @@ python -m unittest discover -v
 
 El recorrido de una solicitud es: formulario Kivy → validación de `RequestService` → escritura JSON atómica → actualización de las vistas por rol. Las fotos se copian al directorio privado de datos de Kivy y su ruta queda asociada a la solicitud.
 
+## Dificultades técnicas y soluciones
+
+- **Entorno de ejecución:** en la comprobación de esta entrega, el Python del sistema no tenía Kivy disponible. Se utilizó el entorno virtual del proyecto y se instalaron las dependencias de `requirements.txt`; para reproducirlo en Windows, sigue los pasos de instalación de este README.
+- **Conservar datos válidos ante errores de guardado:** escribir directamente sobre el JSON podía dejarlo incompleto si una escritura fallaba. `RequestService._save` escribe primero un archivo temporal en el mismo directorio y luego reemplaza el archivo de datos; además, las pruebas comprueban que un error no sobrescriba datos dañados ni conserve cambios no guardados en memoria.
+- **Seguir usando la app sin conexión:** la configuración remota puede no estar disponible. `remote_config.py` valida la respuesta y aplica un tiempo límite; `main.py` consulta en un hilo de fondo y conserva los valores predeterminados locales si la consulta falla, para no bloquear el uso de las solicitudes.
+
 ## Persistencia y modo sin conexión
 
 `RequestService` guarda solicitudes, cuentas registradas y trabajadores en `rama_data.json`, dentro de `App.user_data_dir` (directorio privado de la aplicación). La primera ejecución inicializa datos de demostración; las siguientes cargan el archivo existente. Cada cambio se escribe en un archivo temporal y se reemplaza el anterior al terminar, para reducir el riesgo de dejar un JSON incompleto. Si el archivo está dañado o no se puede escribir, el inicio o la operación falla con un error explícito; no descarta ni reemplaza silenciosamente los datos y revierte el cambio no guardado.
@@ -108,4 +114,4 @@ Para regenerarlas: `python capturar_pantallas.py`.
 
 ## Declaración de uso de IA
 
-La declaración detallada de uso, revisión y responsabilidades está en [usodeia.md](usodeia.md). El equipo debe comprobar que refleje fielmente el trabajo de todas las personas integrantes y completar por separado la fundamentación con resultados obtenidos directamente de participantes.
+La declaración de uso de IA está en [USO_IA.md](USO_IA.md). El equipo debe comprobar que refleje fielmente el trabajo de todas las personas integrantes y completar las partes que requieren información propia, como el modelo si pueden verificarlo y su reflexión personal.
