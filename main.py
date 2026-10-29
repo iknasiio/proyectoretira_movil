@@ -382,15 +382,24 @@ class RamaMobileApp(MDApp):
 
     def _label(self, text: str, *, size: int = 15, color_hex: str = INK,
                height: int = 25, bold: bool = False) -> MDLabel:
-        return MDLabel(
+        label = MDLabel(
             text=text,
             size_hint_y=None,
             height=dp(height),
             font_size=dp(size),
             bold=bold,
+            halign="left",
+            valign="middle",
             theme_text_color="Custom",
             text_color=get_color_from_hex(color_hex),
         )
+        label.bind(
+            size=lambda widget, _size: setattr(
+                widget, "text_size", (widget.width, widget.height),
+            ),
+        )
+        label.text_size = (label.width if label.width else 1, dp(height))
+        return label
 
     def _button(
         self,
@@ -522,9 +531,13 @@ class RamaMobileApp(MDApp):
                     "Asignado: " + " | ".join(preview)
                     + (" + más" if len(assigned_requests) > 2 else "")
                 )
+            assignment_height = 32
+            if len(assignment_text) > 52:
+                assignment_height = 52
             worker_card = MDCard(
                 style="outlined", orientation="vertical", padding=dp(10),
-                spacing=dp(4), size_hint_y=None, height=dp(146),
+                spacing=dp(4), size_hint_y=None,
+                height=dp(24 + 20 + assignment_height + 40 + 32),
             )
             worker_card.add_widget(self._label(
                 worker["name"], size=15, height=dp(24), bold=True,
@@ -536,7 +549,7 @@ class RamaMobileApp(MDApp):
             worker_card.add_widget(self._label(
                 assignment_text, size=12,
                 color_hex=FOREST if assigned_requests else MUTED,
-                height=dp(32),
+                height=assignment_height,
             ))
             actions = MDBoxLayout(
                 orientation="horizontal", spacing=dp(8),
@@ -740,6 +753,7 @@ class RamaMobileApp(MDApp):
             actions.add_widget(primary)
             actions.add_widget(pending_button)
             card.add_widget(actions)
+        card.height = max(card.height, card.minimum_height + dp(26))
         return card
 
     def _show_request_photo(self, request_id: str, photo_path: str) -> None:
