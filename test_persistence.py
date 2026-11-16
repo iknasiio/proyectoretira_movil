@@ -37,6 +37,8 @@ class RequestServicePersistenceTests(unittest.TestCase):
             restored = RequestService(data_path)
 
             self.assertEqual(restored.get("RM-1048")["status"], "accepted")
+            self.assertIn("accepted_at", restored.get("RM-1048"))
+            self.assertIn("created_at", restored.get("RM-1049"))
             self.assertEqual(restored.get("RM-1049")["name"], "Ana Pérez")
             self.assertEqual(
                 restored.authenticate("ana", "anapass")["name"],

@@ -26,6 +26,9 @@ class RequestServiceTests(unittest.TestCase):
         self.service.transition(request["id"], "completed")
         self.assertEqual(self.service.get(request["id"])["status"], "completed")
         self.assertEqual(self.service.get(request["id"])["worker"], WORKERS[0])
+        self.assertIn("created_at", request)
+        self.assertIn("accepted_at", request)
+        self.assertIn("completed_at", request)
 
     def test_worker_only_sees_their_active_assignments(self):
         self.service.transition("RM-1048", "accepted")

@@ -50,6 +50,9 @@
             AdminScreen:
                 name: "admin"
 
+            DashboardScreen:
+                name: "dashboard"
+
             WorkerScreen:
                 name: "worker"
 
@@ -491,6 +494,16 @@
                             theme_text_color: "Custom"
                             text_color: 0.29, 0.34, 0.30, 1
 
+                MDButton:
+                    style: "filled"
+                    size_hint_x: 1
+                    size_hint_y: None
+                    height: dp(50)
+                    on_release: app.open_dashboard()
+                    MDButtonText:
+                        text: "Estadísticas"
+                        font_size: dp(14)
+
                 MDBoxLayout:
                     orientation: "horizontal"
                     size_hint_y: None
@@ -521,6 +534,118 @@
 
                 MDBoxLayout:
                     id: admin_requests
+                    orientation: "vertical"
+                    size_hint_y: None
+                    height: self.minimum_height
+                    spacing: dp(8)
+
+<DashboardScreen>:
+    MDBoxLayout:
+        orientation: "vertical"
+        ScrollView:
+            do_scroll_x: False
+            bar_width: dp(3)
+            MDBoxLayout:
+                orientation: "vertical"
+                size_hint_y: None
+                height: self.minimum_height
+                padding: dp(12), dp(10), dp(12), dp(14)
+                spacing: dp(7)
+
+                MDLabel:
+                    text: "CENTRO DE OPERACIONES"
+                    size_hint_y: None
+                    height: dp(20)
+                    font_size: dp(12)
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: 0.29, 0.34, 0.30, 1
+
+                MDLabel:
+                    text: "Dashboard"
+                    size_hint_y: None
+                    height: dp(30)
+                    font_size: dp(21)
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: 0.11, 0.18, 0.15, 1
+
+                MDLabel:
+                    text: "Monitorea solicitudes, equipo y actividad de la aplicación."
+                    size_hint_y: None
+                    height: dp(38)
+                    font_size: dp(13)
+                    theme_text_color: "Custom"
+                    text_color: 0.29, 0.34, 0.30, 1
+                    text_size: self.width, None
+                    valign: "top"
+
+                MDBoxLayout:
+                    orientation: "horizontal"
+                    size_hint_y: None
+                    height: dp(38)
+                    spacing: dp(8)
+
+                    MDButton:
+                        style: "tonal"
+                        size_hint_x: 1
+                        on_release: app.close_dashboard()
+                        MDButtonText:
+                            text: "Volver"
+                            font_size: dp(12)
+
+                    MDButton:
+                        style: "tonal"
+                        size_hint_x: 1
+                        on_release: app.refresh_dashboard()
+                        MDButtonText:
+                            text: "Actualizar"
+                            font_size: dp(12)
+
+                MDBoxLayout:
+                    orientation: "horizontal"
+                    size_hint_y: None
+                    height: dp(38)
+                    spacing: dp(6)
+
+                    MDButton:
+                        id: period_today
+                        style: "tonal"
+                        size_hint_x: 1
+                        on_release: app.set_dashboard_period(1)
+                        MDButtonText:
+                            text: "Hoy"
+                            font_size: dp(12)
+
+                    MDButton:
+                        id: period_week
+                        style: "filled"
+                        size_hint_x: 1
+                        on_release: app.set_dashboard_period(7)
+                        MDButtonText:
+                            text: "7 días"
+                            font_size: dp(12)
+
+                    MDButton:
+                        id: period_month
+                        style: "tonal"
+                        size_hint_x: 1
+                        on_release: app.set_dashboard_period(30)
+                        MDButtonText:
+                            text: "30 días"
+                            font_size: dp(12)
+
+                MDLabel:
+                    id: dashboard_data_status
+                    text: "Datos locales"
+                    size_hint_y: None
+                    height: dp(18)
+                    font_size: dp(10)
+                    theme_text_color: "Custom"
+                    text_color: 0.29, 0.34, 0.30, 1
+
+                MDBoxLayout:
+                    id: dashboard_content
                     orientation: "vertical"
                     size_hint_y: None
                     height: self.minimum_height

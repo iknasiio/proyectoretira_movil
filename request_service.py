@@ -6,7 +6,7 @@ from copy import deepcopy
 import json
 import os
 import tempfile
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -419,6 +419,7 @@ class RequestService:
             "description": description.strip(),
             "photo_path": photo_path,
             "date": date.today().isoformat(),
+            "created_at": datetime.now().astimezone().isoformat(timespec="seconds"),
             "status": "submitted",
             "worker": "",
         }
@@ -472,6 +473,14 @@ class RequestService:
             request["pending_reason"] = reason.strip()
         elif status in {"in_progress", "completed"}:
             request["pending_reason"] = ""
+        if status == "accepted":
+            request["accepted_at"] = datetime.now().astimezone().isoformat(
+                timespec="seconds",
+            )
+        elif status == "completed":
+            request["completed_at"] = datetime.now().astimezone().isoformat(
+                timespec="seconds",
+            )
         request["status"] = status
         self._save()
         return request

@@ -1,6 +1,6 @@
 # Rama | Retiro de poda
 
-Rama coordina el retiro municipal de ramas y restos de poda acumulados frente a las viviendas. La demo integra registro e inicio de sesión por rol, solicitudes con fotografía, asignación de trabajadores, seguimiento del servicio, persistencia local, notificaciones en pantalla y configuración remota.
+Rama coordina el retiro municipal de ramas y restos de poda acumulados frente a las viviendas. La demo integra registro e inicio de sesión por rol, solicitudes con fotografía, asignación de trabajadores, seguimiento del servicio, un dashboard de estadísticas para administración, persistencia local, notificaciones en pantalla y configuración remota.
 
 ## Ejecutar en Windows
 
@@ -25,8 +25,8 @@ python -m unittest discover -v
 
 | Archivo | Responsabilidad |
 | --- | --- |
-| `main.py` | Arranque, control de sesión, validaciones de interfaz y coordinación de eventos. |
-| `rama.kv` | Pantallas de acceso, ciudadano, administración y trabajador. |
+| `main.py` | Arranque, control de sesión, validaciones de interfaz, coordinación de eventos y métricas del dashboard administrativo. |
+| `rama.kv` | Pantallas de acceso, ciudadano, administración, dashboard de estadísticas y trabajador. |
 | `request_service.py` | Reglas de negocio, autenticación de demostración y persistencia JSON. |
 | `remote_config.py` | Descarga con tiempo límite y validación de configuración remota. |
 | `remote_config.json` | Valores que se publican en el repositorio para la configuración remota. |
@@ -35,6 +35,8 @@ python -m unittest discover -v
 | `test_remote_config.py` | Pruebas de respuesta válida, valores predeterminados y fallas remotas. |
 
 El recorrido de una solicitud es: formulario Kivy → validación de `RequestService` → escritura JSON atómica → actualización de las vistas por rol. Las fotos se copian al directorio privado de datos de Kivy y su ruta queda asociada a la solicitud.
+
+El dashboard de administración presenta el resumen, alertas, solicitudes por estado, tendencia de creación y finalización, zonas, carga del equipo, cantidades y actividad reciente en tarjetas adaptables a móvil. Los filtros de hoy, 7 y 30 días controlan el periodo de la gráfica. El dashboard calcula tiempos promedio solo para solicitudes nuevas, a partir de las marcas locales de creación, aceptación y finalización; las solicitudes anteriores a ese registro no aportan tiempo a esos promedios.
 
 ## Dificultades técnicas y soluciones
 
