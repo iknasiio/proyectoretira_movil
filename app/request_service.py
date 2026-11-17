@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import hashlib
+import hmac
 import json
 import os
+import secrets
 import tempfile
+import time
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
@@ -95,11 +99,17 @@ _TRANSITIONS = {
 }
 
 
+RESET_CODE_TTL_SECONDS = 10 * 60
+RESET_MAX_ATTEMPTS = 5
+
+
 class RequestService:
     """Manage requests and accounts, optionally persisting them as local JSON."""
 
     def __init__(self, data_path: str | Path | None = None):
         self.data_path = Path(data_path) if data_path is not None else None
+        # Códigos de recuperación pendientes: solo en memoria, nunca en disco.
+        self._reset_codes: dict[str, dict[str, Any]] = {}
         if self.data_path and self.data_path.exists():
             self._load()
             return
@@ -289,6 +299,71 @@ class RequestService:
             for key in ("username", "name", "email", "role")
             if key in account
         }
+
+    @staticmethod
+    def _reset_digest(code: str, salt: str) -> str:
+        return hashlib.sha256(f"{salt}:{code}".encode("utf-8")).hexdigest()
+
+    def create_password_reset(self, username: str) -> dict[str, str] | None:
+        """Genera un código de 6 dígitos para la cuenta y lo deja pendiente.
+
+        Devuelve usuario, nombre, correo y el código en claro (para enviarlo
+        por correo), o None si el usuario no existe o no tiene correo.
+        """
+        normalized_username = username.strip().casefold()
+        account = next(
+            (
+                item for item in self.accounts + self.workers
+                if item["username"] == normalized_username
+            ),
+            None,
+        )
+        if account is None or "@" not in account.get("email", ""):
+            return None
+        code = f"{secrets.randbelow(1_000_000):06d}"
+        salt = secrets.token_hex(8)
+        self._reset_codes[normalized_username] = {
+            "salt": salt,
+            "digest": self._reset_digest(code, salt),
+            "expires_at": time.monotonic() + RESET_CODE_TTL_SECONDS,
+            "attempts": 0,
+        }
+        return {
+            "username": normalized_username,
+            "name": account["name"],
+            "email": account["email"].strip(),
+            "code": code,
+        }
+
+    def cancel_password_reset(self, username: str) -> None:
+        self._reset_codes.pop(username.strip().casefold(), None)
+
+    def reset_password(self, username: str, code: str, new_password: str) -> None:
+        """Cambia la contraseña si el código es válido, vigente y no usado."""
+        normalized_username = username.strip().casefold()
+        pending = self._reset_codes.get(normalized_username)
+        if pending is None:
+            raise ValueError("Solicita un código nuevo para cambiar la contraseña.")
+        if time.monotonic() > pending["expires_at"]:
+            del self._reset_codes[normalized_username]
+            raise ValueError("El código venció. Solicita uno nuevo.")
+        if len(new_password) < 6:
+            raise ValueError("La nueva contraseña debe tener al menos 6 caracteres.")
+        candidate = self._reset_digest(code.strip(), pending["salt"])
+        if not hmac.compare_digest(candidate, pending["digest"]):
+            pending["attempts"] += 1
+            if pending["attempts"] >= RESET_MAX_ATTEMPTS:
+                del self._reset_codes[normalized_username]
+                raise ValueError(
+                    "Demasiados intentos fallidos. Solicita un código nuevo."
+                )
+            remaining = RESET_MAX_ATTEMPTS - pending["attempts"]
+            raise ValueError(f"Código incorrecto. Te quedan {remaining} intentos.")
+        for account in self.accounts + self.workers:
+            if account["username"] == normalized_username:
+                account["password"] = new_password
+        del self._reset_codes[normalized_username]
+        self._save()
 
     def list_workers(self) -> list[dict[str, str]]:
         return [

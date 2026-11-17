@@ -1,12 +1,16 @@
+import sys
 from pathlib import Path
 
 from kivy.clock import Clock
 from kivy.core.window import Window
 
-from main import RamaMobileApp
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_DIR))
+
+from app.main import RamaMobileApp
 
 
-CAPTURE_DIR = Path(__file__).parent / "capturas"
+CAPTURE_DIR = PROJECT_DIR / "capturas"
 SCREENS = (
     ("elena", "elena123", "citizen", "ciudadano.png"),
     ("admin", "admin123", "admin", "administracion.png"),

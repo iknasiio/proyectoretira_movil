@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from request_service import RequestService
+from app.request_service import RequestService
 
 
 class RequestServicePersistenceTests(unittest.TestCase):

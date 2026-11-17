@@ -24,7 +24,7 @@ La asistencia de IA contribuyó con propuestas y revisiones relacionadas con la 
 
 ## 5. Ajustes
 
-El equipo debe revisar y confirmar este apartado según el historial completo del trabajo. En el código actual, las decisiones visibles incluyen guardar los datos en el directorio privado de la aplicación, escribir el JSON mediante un archivo temporal antes de reemplazarlo, validar la configuración remota y conservar valores locales cuando no está disponible. La configuración remota se consulta en segundo plano para no bloquear el inicio de la interfaz. No se deben presentar las cuentas de prueba como cuentas seguras ni los datos ficticios como información obtenida de participantes reales.
+El equipo debe revisar y confirmar este apartado según el historial completo del trabajo. En el código actual, los módulos de la aplicación están en `app/`, las pruebas en `tests/` y la documentación en `docs/`. Las decisiones visibles incluyen guardar los datos en el directorio privado de la aplicación, escribir el JSON mediante un archivo temporal antes de reemplazarlo, validar la configuración remota y conservar valores locales cuando no está disponible. La configuración remota se consulta en segundo plano para no bloquear el inicio de la interfaz. No se deben presentar las cuentas de prueba como cuentas seguras ni los datos ficticios como información obtenida de participantes reales.
 
 ## 6. Reflexión en el uso de IA
 

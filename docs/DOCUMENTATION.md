@@ -18,15 +18,17 @@ La aplicación permite:
 
 El proyecto mantiene una separación clara entre capas de presentación, lógica y datos:
 
-- `main.py`: vista y coordinación general de la aplicación. Contiene las pantallas, formularios, diálogos, navegación y construcción del dashboard.
-- `request_service.py`: núcleo de negocio. Define los roles, validaciones, transiciones de estado, persistencia y reglas de acceso.
-- `rama.kv`: archivos de interfaz y definición visual de pantallas.
-- `remote_config.py`: carga de configuración remota con validación y fallback local.
-- `remote_config.json`: configuración pública que puede actualizar el texto de bienvenida y la localidad base.
+- `app/main.py`: vista y coordinación general de la aplicación. Contiene las pantallas, formularios, diálogos, navegación y construcción del dashboard.
+- `app/request_service.py`: núcleo de negocio. Define los roles, validaciones, transiciones de estado, persistencia y reglas de acceso.
+- `app/rama.kv`: archivo de interfaz y definición visual de pantallas.
+- `app/remote_config.py`: carga de configuración remota con validación y fallback local.
+- `app/config/remote_config.json`: copia local de la configuración pública; se publica como `remote_config.json` en la raíz del repositorio remoto.
+- `app/config/email_settings.json`: configuración SMTP local, excluida de Git.
+- `tests/`: pruebas automatizadas.
 
 ### Principios de diseño
 
-- MVC/POO identificables: la lógica de negocio está encapsulada en `RequestService`, mientras las pantallas en `main.py` sólo coordinan eventos y actualizaciones visuales.
+- MVC/POO identificables: la lógica de negocio está encapsulada en `RequestService`, mientras las pantallas en `app/main.py` sólo coordinan eventos y actualizaciones visuales.
 - Persistencia segura: cada cambio se guarda mediante archivo temporal antes de reemplazar el JSON principal.
 - Manejo de errores: si el archivo está corrupto o la configuración remota falla, la app mantiene funcionamiento local.
 - UX orientada a móvil: los cards, notificaciones y filtros están diseñados para una gestión ágil desde un teléfono.
@@ -83,7 +85,7 @@ El proyecto cuenta con pruebas automáticas para verificar:
 - transiciones de estado válidas e inválidas;
 - validación de configuración remota.
 
-Comando recomendado:
+Desde la raíz del proyecto:
 
 ```powershell
 $env:KIVY_NO_ARGS = "1"
@@ -96,7 +98,7 @@ La app es una demostración académica. Los datos son ficticios y sirven únicam
 
 ## 9. Referencias rápidas
 
-- README: guía de instalación y uso general.
+- [README](../README.md): guía de instalación y uso general.
 - DOCUMENTATION.md: explicación técnica completa.
-- INFORME_FINAL.md: resumen de diagnóstico, métricas y propuesta final.
-- USO_IA.md: declaración honesta de uso de IA.
+- [INFORME_FINAL.md](INFORME_FINAL.md): resumen de diagnóstico, métricas y propuesta final.
+- [USO_IA.md](USO_IA.md): declaración honesta de uso de IA.

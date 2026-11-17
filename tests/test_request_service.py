@@ -1,8 +1,8 @@
 import unittest
 from unittest.mock import Mock
 
-from main import RamaMobileApp
-from request_service import RequestService, WORKERS
+from app.main import RamaMobileApp
+from app.request_service import RequestService, WORKERS
 
 
 class RequestServiceTests(unittest.TestCase):

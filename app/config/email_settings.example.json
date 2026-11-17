@@ -1,0 +1,8 @@
+{
+  "host": "smtp.gmail.com",
+  "port": 587,
+  "security": "starttls",
+  "user": "tu_correo@gmail.com",
+  "password": "contraseña-de-aplicacion-de-16-letras",
+  "from": "tu_correo@gmail.com"
+}

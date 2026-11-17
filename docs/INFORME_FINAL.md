@@ -19,7 +19,7 @@ Esto conecta directamente el problema con la funcionalidad real del producto.
 
 ## 2. Solución desarrollada
 
-Rama es una aplicación móvil construida en Kivy/KivyMD con lógica de negocio en `request_service.py` y vistas en `main.py`. La app incluye:
+Rama es una aplicación móvil construida en Kivy/KivyMD con lógica de negocio en `app/request_service.py` y vistas en `app/main.py`. La app incluye:
 
 - autenticación por roles;
 - registro de usuarios y recuperación de contraseña;
@@ -115,7 +115,7 @@ En términos de accesibilidad y uso responsable:
 - el uso de datos ficticios evita exponer información personal real;
 - la solución está pensada para apoyar la calidad del servicio municipal, no para sustituir criterios humanos.
 
-También se reconoce el uso de IA en el desarrollo, de acuerdo con la declaración formal de este proyecto en `USO_IA.md`. La responsabilidad final por el código, la validación y las decisiones del producto es del equipo.
+También se reconoce el uso de IA en el desarrollo, de acuerdo con la declaración formal de este proyecto en `docs/USO_IA.md`. La responsabilidad final por el código, la validación y las decisiones del producto es del equipo.
 
 ## 6. Conclusión final
 

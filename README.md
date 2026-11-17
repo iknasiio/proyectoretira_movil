@@ -12,7 +12,17 @@ Este proyecto está orientado a la rúbrica de la evaluación final y se estruct
 4. Resultados y mejora: el dashboard presenta métricas y alertas para identificar cuellos de botella y priorizar mejoras.
 5. Reflexión social y ética: el proyecto considera privacidad, uso responsable de datos y declaración de uso de IA.
 
-La documentación relevante del proyecto vive en [DOCUMENTATION.md](DOCUMENTATION.md), [INFORME_FINAL.md](INFORME_FINAL.md) y [USO_IA.md](USO_IA.md).
+La documentación relevante del proyecto vive en [DOCUMENTATION.md](docs/DOCUMENTATION.md), [INFORME_FINAL.md](docs/INFORME_FINAL.md) y [USO_IA.md](docs/USO_IA.md).
+
+## Estructura del proyecto
+
+- `app/`: aplicación, interfaz Kivy, servicios y configuración.
+- `assets/` y `capturas/`: recursos gráficos y capturas de pantalla.
+- `tests/`: pruebas automatizadas.
+- `docs/`: documentación técnica, informe y declaración de uso de IA.
+- `scripts/`: utilidades de desarrollo.
+- `main.py`: lanzador de la app; `requirements.txt`: dependencias.
+- Los datos de usuario siguen en el directorio privado de Kivy y no se mueven con el código.
 
 ## Ejecutar en Windows
 
@@ -37,14 +47,12 @@ python -m unittest discover -v
 
 | Archivo | Responsabilidad |
 | --- | --- |
-| `main.py` | Arranque, control de sesión, validaciones de interfaz, coordinación de eventos y métricas del dashboard administrativo. |
-| `rama.kv` | Pantallas de acceso, ciudadano, administración, dashboard de estadísticas y trabajador. |
-| `request_service.py` | Reglas de negocio, autenticación de demostración y persistencia JSON. |
-| `remote_config.py` | Descarga con tiempo límite y validación de configuración remota. |
-| `remote_config.json` | Valores que se publican en el repositorio para la configuración remota. |
-| `test_request_service.py` | Pruebas del flujo de solicitudes, roles y estados. |
-| `test_persistence.py` | Pruebas de guardado, recuperación y errores de datos JSON. |
-| `test_remote_config.py` | Pruebas de respuesta válida, valores predeterminados y fallas remotas. |
+| `app/main.py` y `main.py` | App y lanzador desde la raíz del proyecto. |
+| `app/rama.kv` | Pantallas de acceso, ciudadano, administración, dashboard de estadísticas y trabajador. |
+| `app/request_service.py` | Reglas de negocio, autenticación de demostración y persistencia JSON. |
+| `app/remote_config.py` | Descarga con tiempo límite y validación de configuración remota. |
+| `app/config/remote_config.json` | Copia local de los valores para la configuración remota. |
+| `tests/` | Pruebas del flujo de solicitudes, persistencia, correo y configuración remota. |
 
 El recorrido de una solicitud es: formulario Kivy → validación de `RequestService` → escritura JSON atómica → actualización de las vistas por rol. Las fotos se copian al directorio privado de datos de Kivy y su ruta queda asociada a la solicitud.
 
@@ -70,7 +78,9 @@ La interfaz muestra un aviso local temporal sobre la pantalla cuando se envía o
 
 ## Configuración remota y valor predeterminado
 
-Al iniciar, un hilo en segundo plano consulta `remote_config.json` en la rama `main` del repositorio. La configuración actualiza el texto de bienvenida y el municipio utilizado para construir el recorrido de Google Maps. `remote_config.py` aplica un tiempo límite de cuatro segundos y valida los campos antes de usarlos; si falta Internet, el servidor falla o el JSON no es válido, conserva los valores de `DEFAULT_REMOTE_CONFIG` y muestra que está usando la configuración local. No bloquea el acceso ni la gestión de solicitudes.
+Al iniciar, un hilo en segundo plano consulta `remote_config.json` en la rama `main` del repositorio. La configuración actualiza el texto de bienvenida y el municipio utilizado para construir el recorrido de Google Maps. La copia del proyecto está en `app/config/remote_config.json`; la app consulta la URL publicada en la raíz del repositorio. `app/remote_config.py` aplica un tiempo límite de cuatro segundos y valida los campos antes de usarlos; si falta Internet, el servidor falla o el JSON no es válido, conserva los valores de `DEFAULT_REMOTE_CONFIG` y muestra que está usando la configuración local. No bloquea el acceso ni la gestión de solicitudes.
+
+La configuración SMTP local se guarda en `app/config/email_settings.json`, a partir de `app/config/email_settings.example.json`. El archivo local está excluido de Git; no compartas ni publiques sus credenciales.
 
 Para probar otra URL sin cambiar el código (PowerShell):
 
@@ -79,7 +89,7 @@ $env:RAMA_REMOTE_CONFIG_URL = "https://tu-servidor/config.json"
 python main.py
 ```
 
-La respuesta debe ser un objeto JSON; `municipality` y `announcement` deben ser textos no vacíos. Los campos omitidos conservan su valor predeterminado. Para que la URL predeterminada lea los cambios publicados, hay que subir `remote_config.json` a la rama `main`; los cambios que solo están en el equipo todavía no son accesibles desde Internet.
+La respuesta debe ser un objeto JSON; `municipality` y `announcement` deben ser textos no vacíos. Los campos omitidos conservan su valor predeterminado. Para que la URL predeterminada lea los cambios publicados, hay que publicar el contenido de `app/config/remote_config.json` como `remote_config.json` en la raíz de la rama `main`; los cambios que solo están en el equipo todavía no son accesibles desde Internet.
 
 ## Flujo sugerido para la demostración
 
@@ -124,8 +134,8 @@ El equipo debe poder explicar también qué validación protege cada transición
 
 ![Pantalla Trabajador](capturas/trabajador.png)
 
-Para regenerarlas: `python capturar_pantallas.py`.
+Para regenerarlas: `python scripts\capturar_pantallas.py`.
 
 ## Declaración de uso de IA
 
-La declaración de uso de IA está en [USO_IA.md](USO_IA.md). El equipo debe comprobar que refleje fielmente el trabajo de todas las personas integrantes y completar las partes que requieren información propia, como el modelo si pueden verificarlo y su reflexión personal.
+La declaración de uso de IA está en [USO_IA.md](docs/USO_IA.md). El equipo debe comprobar que refleje fielmente el trabajo de todas las personas integrantes y completar las partes que requieren información propia, como el modelo si pueden verificarlo y su reflexión personal.
