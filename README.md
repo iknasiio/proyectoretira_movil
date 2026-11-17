@@ -43,6 +43,28 @@ $env:KIVY_NO_ARGS = "1"
 python -m unittest discover -v
 ```
 
+## Empaquetar para Android
+
+La configuración inicial está en `buildozer.spec`: define el paquete
+`io.github.iknasiio.rama`, Android API 36, permisos de cámara e Internet,
+un APK de depuración y un AAB de publicación. La receta local de
+`p4a-recipes` obtiene `materialyoucolor` desde PyPI, para evitar el archivo
+inválido servido por la receta predeterminada de python-for-android. Para
+compilar se necesita Buildozer en Linux o WSL2; desde la carpeta del proyecto
+se ejecuta:
+
+```bash
+PATH="$HOME/.local/bin:$PATH" PIP_BREAK_SYSTEM_PACKAGES=1 buildozer -v android debug
+```
+
+En Ubuntu 24.04, `PIP_BREAK_SYSTEM_PACKAGES=1` evita el bloqueo PEP 668 de
+pip usado por python-for-android para instalar herramientas en el entorno de
+usuario.
+
+El APK se genera en `bin/`. El identificador del paquete debe confirmarse
+antes de publicar, porque no se puede cambiar después de crear la ficha en
+Google Play. Para publicar también hay que firmar el AAB con una clave propia.
+
 ## Componentes y flujo de datos
 
 | Archivo | Responsabilidad |

@@ -3,11 +3,9 @@ from __future__ import annotations
 import os
 import shutil
 import webbrowser
-import tkinter as tk
 from collections.abc import Callable
 from datetime import date, datetime, timedelta
 from pathlib import Path
-from tkinter import filedialog
 from threading import Thread
 from urllib.parse import urlencode
 from uuid import uuid4
@@ -199,6 +197,7 @@ class RamaMobileApp(MDApp):
         self.editing_request_id = None
         self.editing_original_photo = ""
         self.dashboard_period = 7
+        self._android_photo_request_code = None
         Builder.load_file(str(APP_DIR / "rama.kv"))
         return RamaRoot()
 
@@ -884,7 +883,7 @@ class RamaMobileApp(MDApp):
             style="outlined", orientation="vertical", padding=dp(10),
             spacing=dp(6), size_hint_y=None,
         )
-        card.add_widget(self._label(title, size=14, height=dp(23), bold=True))
+        card.add_widget(self._label(title, size=14, height=23, bold=True))
         for child in children:
             card.add_widget(child)
         card.bind(minimum_height=card.setter("height"))
@@ -899,14 +898,14 @@ class RamaMobileApp(MDApp):
             spacing=0, size_hint=(1, None), height=dp(62),
         )
         card.add_widget(self._label(
-            value, size=17, height=dp(21), bold=True, color_hex=color,
+            value, size=17, height=21, bold=True, color_hex=color,
         ))
         card.add_widget(self._label(
-            label, size=9, height=dp(18), color_hex=INK,
+            label, size=9, height=18, color_hex=INK,
         ))
         if detail:
             card.add_widget(self._label(
-                detail, size=8, height=dp(11), color_hex=MUTED,
+                detail, size=8, height=11, color_hex=MUTED,
             ))
         return card
 
@@ -950,7 +949,7 @@ class RamaMobileApp(MDApp):
             orientation="horizontal", spacing=dp(7),
             size_hint_y=None, height=dp(24),
         )
-        label_widget = self._label(label, size=10, height=dp(22))
+        label_widget = self._label(label, size=10, height=22)
         label_widget.size_hint_x = None
         label_widget.width = dp(95)
         row.add_widget(label_widget)
@@ -969,7 +968,7 @@ class RamaMobileApp(MDApp):
             track.add_widget(bar)
         row.add_widget(track)
         value_widget = self._label(
-            detail or str(value), size=10, height=dp(22),
+            detail or str(value), size=10, height=22,
         )
         value_widget.size_hint_x = None
         value_widget.width = dp(27)
@@ -1035,14 +1034,14 @@ class RamaMobileApp(MDApp):
                     self._average_duration(
                         all_requests, "created_at", "accepted_at",
                     ),
-                    "Tiempo hasta aceptar",
+                    "Hasta aceptar",
                     "Promedio",
                 ),
                 self._dashboard_metric(
                     self._average_duration(
                         all_requests, "accepted_at", "completed_at",
                     ),
-                    "Tiempo hasta completar",
+                    "Hasta completar",
                     "Promedio",
                 ),
             ),
@@ -1079,20 +1078,20 @@ class RamaMobileApp(MDApp):
                 continue
             if age >= 3 and status == "submitted":
                 alerts.append((
-                    f"○ {request_id} lleva {age} días sin revisar",
+                    f"! {request_id} lleva {age} días sin revisar",
                     "#8A5A18",
                 ))
             elif age >= 3 and status == "accepted":
                 alerts.append((
-                    f"○ {request_id} está aceptada y falta asignar trabajador",
+                    f"! {request_id} está aceptada y falta asignar trabajador",
                     "#8A5A18",
                 ))
         alert_rows = [
-            self._label(text, size=11, height=dp(31), color_hex=color)
+            self._label(text, size=11, height=31, color_hex=color)
             for text, color in alerts[:4]
         ] or [self._label(
             "No hay alertas que requieran atención.",
-            size=11, height=dp(25), color_hex=MUTED,
+            size=11, height=25, color_hex=MUTED,
         )]
         content.add_widget(self._dashboard_card("Alertas", alert_rows))
 
@@ -1100,7 +1099,7 @@ class RamaMobileApp(MDApp):
             "submitted": "Por revisar",
             "accepted": "Aceptadas",
             "assigned": "Asignadas",
-            "in_progress": "En recolección",
+            "in_progress": "En curso",
             "pending": "Pendientes",
             "completed": "Completadas",
         }
@@ -1165,7 +1164,7 @@ class RamaMobileApp(MDApp):
         )
         for day_label_text in date_labels_text:
             day_label = self._label(
-                day_label_text, size=9, height=dp(18),
+                day_label_text, size=9, height=18,
                 color_hex=MUTED,
             )
             day_label.halign = "center"
@@ -1181,7 +1180,7 @@ class RamaMobileApp(MDApp):
         ):
             entry = MDBoxLayout(
                 orientation="horizontal", spacing=dp(4),
-                size_hint=(None, None), size=(dp(92), dp(18)),
+                size_hint=(None, None), size=(dp(120), dp(18)),
             )
             dot = Widget(size_hint=(None, None), size=(dp(7), dp(7)))
             with dot.canvas.before:
@@ -1197,7 +1196,7 @@ class RamaMobileApp(MDApp):
             )
             entry.add_widget(dot)
             entry.add_widget(self._label(
-                text, size=10, height=dp(18), color_hex=MUTED,
+                text, size=9, height=18, color_hex=MUTED,
             ))
             legend.add_widget(entry)
         chart_rows = [
@@ -1229,14 +1228,16 @@ class RamaMobileApp(MDApp):
                 str(zone["name"]), int(zone["total"]), max_zone_count,
                 detail=str(zone["total"]),
             ))
+            open_count = int(zone["open"])
+            open_label = "abierta" if open_count == 1 else "abiertas"
             zone_rows.append(self._label(
-                f"{zone['open']} abiertas",
-                size=9, height=dp(15), color_hex=MUTED,
+                f"{open_count} {open_label}",
+                size=9, height=15, color_hex=MUTED,
             ))
         if not zone_rows:
             zone_rows.append(self._label(
                 "Sin solicitudes en este periodo.",
-                size=12, height=dp(25), color_hex=MUTED,
+                size=12, height=25, color_hex=MUTED,
             ))
         content.add_widget(self._dashboard_card(
             "Zonas con más solicitudes", zone_rows,
@@ -1258,9 +1259,10 @@ class RamaMobileApp(MDApp):
                 item["status"] == "completed" for item in worker_requests
             )
             active = in_course + pending
+            active_label = "activo" if active == 1 else "activos"
             worker_rows.append(self._label(
-                f"{worker['name']}  ·  {active} activos",
-                size=11, height=dp(21), bold=True,
+                f"{worker['name']}  ·  {active} {active_label}",
+                size=11, height=21, bold=True,
             ))
             worker_rows.append(DashboardSegmentBar(
                 [in_course, pending, finished],
@@ -1270,12 +1272,12 @@ class RamaMobileApp(MDApp):
             worker_rows.append(self._label(
                 f"{in_course} en curso · {pending} pendientes · "
                 f"{finished} completados",
-                size=9, height=dp(16), color_hex=MUTED,
+                size=9, height=16, color_hex=MUTED,
             ))
         if not worker_rows:
             worker_rows.append(self._label(
                 "No hay trabajadores registrados.",
-                size=12, height=dp(25), color_hex=MUTED,
+                size=12, height=25, color_hex=MUTED,
             ))
         content.add_widget(self._dashboard_card("Carga del equipo", worker_rows))
 
@@ -1308,12 +1310,12 @@ class RamaMobileApp(MDApp):
                 f"{item.get('date', '')}  ·  {item.get('id', '')}: creada por "
                 f"{item.get('name', '')} · "
                 f"{STATUS_LABELS.get(item.get('status', ''), 'Sin estado')}",
-                size=10, height=dp(35), color_hex=INK,
+                size=10, height=35, color_hex=INK,
             )
             for item in recent
         ] or [self._label(
             "Aún no hay solicitudes registradas.",
-            size=12, height=dp(25), color_hex=MUTED,
+            size=12, height=25, color_hex=MUTED,
         )]
         content.add_widget(self._dashboard_card(
             "Actividad reciente", activity_rows,
@@ -1357,7 +1359,7 @@ class RamaMobileApp(MDApp):
         if not workers:
             worker_container.add_widget(self._label(
                 "No hay trabajadores registrados.", size=14,
-                color_hex=MUTED, height=dp(32),
+                color_hex=MUTED, height=32,
             ))
         for worker in workers:
             assigned_requests = self.service.for_worker(worker["name"])
@@ -1380,11 +1382,11 @@ class RamaMobileApp(MDApp):
                 height=dp(24 + 20 + assignment_height + 40 + 32),
             )
             worker_card.add_widget(self._label(
-                worker["name"], size=15, height=dp(24), bold=True,
+                worker["name"], size=15, height=24, bold=True,
             ))
             worker_card.add_widget(self._label(
                 f"Usuario: {worker['username']}", size=13,
-                color_hex=MUTED, height=dp(20),
+                color_hex=MUTED, height=20,
             ))
             worker_card.add_widget(self._label(
                 assignment_text, size=12,
@@ -1423,12 +1425,12 @@ class RamaMobileApp(MDApp):
         ):
             requests = [item for item in self.service.requests if item["status"] == status]
             container.add_widget(self._label(
-                f"{heading}  ·  {len(requests)}", size=16, height=dp(36), bold=True,
+                f"{heading}  ·  {len(requests)}", size=16, height=36, bold=True,
             ))
             if not requests:
                 container.add_widget(self._label(
                     "No hay solicitudes en esta etapa.", size=14,
-                    color_hex=MUTED, height=dp(32),
+                    color_hex=MUTED, height=32,
                 ))
             for request in requests:
                 container.add_widget(self._request_card(request, admin_actions=True))
@@ -1450,7 +1452,7 @@ class RamaMobileApp(MDApp):
         if not requests:
             container.add_widget(self._label(
                 "No tienes retiros pendientes asignados.", size=14,
-                color_hex=MUTED, height=dp(42),
+                color_hex=MUTED, height=42,
             ))
         for stop_number, request in enumerate(requests, start=1):
             container.add_widget(self._request_card(
@@ -1487,33 +1489,33 @@ class RamaMobileApp(MDApp):
         if stop_number is not None:
             card.add_widget(self._label(
                 f"PARADA {stop_number}", size=14, color_hex=FOREST,
-                height=dp(22), bold=True,
+                height=22, bold=True,
             ))
         card.add_widget(self._label(
             f"{request['id']}  ·  {request['date']}", size=14,
-            color_hex=MUTED, height=dp(24), bold=True,
+            color_hex=MUTED, height=24, bold=True,
         ))
         card.add_widget(self._label(
             f"{request['address']} · {request['neighborhood']}",
-            size=16, height=dp(28), bold=True,
+            size=16, height=38, bold=True,
         ))
         card.add_widget(self._label(
             f"{request['name']}  ·  {request['quantity']}  ·  {STATUS_LABELS[request['status']]}",
-            size=14, color_hex=FOREST, height=dp(26),
+            size=14, color_hex=FOREST, height=26,
         ))
         if request.get("worker"):
             card.add_widget(self._label(
                 f"Responsable: {request['worker']}", size=14,
-                color_hex=MUTED, height=dp(23),
+                color_hex=MUTED, height=23,
             ))
         if request.get("description"):
             card.add_widget(self._label(
-                request["description"], size=14, color_hex=MUTED, height=dp(34),
+                request["description"], size=14, color_hex=MUTED, height=34,
             ))
         if request.get("pending_reason"):
             card.add_widget(self._label(
                 f"Motivo pendiente: {request['pending_reason']}", size=14,
-                color_hex="#70410F", height=dp(40),
+                color_hex="#70410F", height=40,
             ))
         if request.get("photo_path"):
             card.add_widget(self._button(
@@ -1657,7 +1659,14 @@ class RamaMobileApp(MDApp):
         return True
 
     def choose_request_photo(self) -> None:
+        if platform == "android":
+            self._choose_android_request_photo()
+            return
+
         if platform not in {"android", "ios"}:
+            import tkinter as tk
+            from tkinter import filedialog
+
             root = tk.Tk()
             root.withdraw()
             root.attributes("-topmost", True)
@@ -1710,6 +1719,123 @@ class RamaMobileApp(MDApp):
         ))
         popup.open()
 
+    def _choose_android_request_photo(self) -> None:
+        if getattr(self, "_android_photo_request_code", None) is not None:
+            return
+
+        try:
+            from android import activity, mActivity
+            from jnius import JavaException, autoclass
+        except ImportError as error:
+            self._show_dialog(
+                "Selector no disponible",
+                f"No se pudo iniciar el selector de Android: {error}",
+            )
+            return
+
+        intent_class = autoclass("android.content.Intent")
+        intent = intent_class(intent_class.ACTION_OPEN_DOCUMENT)
+        intent.addCategory(intent_class.CATEGORY_OPENABLE)
+        intent.setType("image/*")
+        intent.addFlags(intent_class.FLAG_GRANT_READ_URI_PERMISSION)
+        request_code = 48127
+        self._android_photo_request_code = request_code
+        activity.bind(on_activity_result=self._on_android_photo_result)
+        try:
+            mActivity.startActivityForResult(intent, request_code)
+        except JavaException as error:
+            activity.unbind(on_activity_result=self._on_android_photo_result)
+            self._android_photo_request_code = None
+            self._show_dialog(
+                "Selector no disponible",
+                f"No se pudo abrir la selección de imágenes: {error}",
+            )
+
+    def _on_android_photo_result(
+        self, request_code: int, result_code: int, data,
+    ) -> None:
+        if request_code != self._android_photo_request_code:
+            return
+
+        from android import activity
+        from jnius import JavaException, autoclass
+
+        activity.unbind(on_activity_result=self._on_android_photo_result)
+        self._android_photo_request_code = None
+        if data is None or result_code != autoclass(
+            "android.app.Activity",
+        ).RESULT_OK:
+            return
+        uri = data.getData()
+        if uri is None:
+            self._show_dialog(
+                "No se seleccionó una imagen",
+                "El selector no devolvió una foto. Inténtalo otra vez.",
+            )
+            return
+
+        temporary_path = None
+        try:
+            temporary_path = self._copy_android_photo(uri)
+            self._set_selected_photo(str(temporary_path))
+        except (JavaException, OSError, ValueError) as error:
+            self._show_dialog("No se pudo adjuntar la foto", str(error))
+        finally:
+            if temporary_path is not None:
+                temporary_path.unlink(missing_ok=True)
+
+    def _copy_android_photo(self, uri) -> Path:
+        from android import mActivity
+        from jnius import autoclass
+
+        resolver = mActivity.getContentResolver()
+        mime_type = str(resolver.getType(uri) or "").split(";", 1)[0].strip().lower()
+        suffix = {
+            "image/jpeg": ".jpg",
+            "image/png": ".png",
+            "image/webp": ".webp",
+        }.get(mime_type)
+        if suffix is None:
+            raise ValueError("Elige una imagen JPG, PNG o WEBP.")
+
+        destination_dir = Path(self.user_data_dir)
+        destination_dir.mkdir(parents=True, exist_ok=True)
+        destination = destination_dir / f"{uuid4().hex}{suffix}"
+        input_stream = resolver.openInputStream(uri)
+        if input_stream is None:
+            raise OSError("No se pudo leer la imagen seleccionada.")
+        output_stream = None
+        copied_successfully = False
+        try:
+            try:
+                output_stream = autoclass("java.io.FileOutputStream")(
+                    str(destination),
+                )
+                channels = autoclass("java.nio.channels.Channels")
+                source_channel = channels.newChannel(input_stream)
+                destination_channel = output_stream.getChannel()
+                offset = 0
+                while True:
+                    copied = destination_channel.transferFrom(
+                        source_channel, offset, 1024 * 1024,
+                    )
+                    if copied <= 0:
+                        break
+                    offset += copied
+            finally:
+                try:
+                    if output_stream is not None:
+                        output_stream.close()
+                finally:
+                    input_stream.close()
+            if not destination.is_file() or destination.stat().st_size == 0:
+                raise OSError("No se pudo copiar la imagen seleccionada.")
+            copied_successfully = True
+            return destination
+        finally:
+            if not copied_successfully:
+                destination.unlink(missing_ok=True)
+
     def _select_request_photo(self, popup: Popup, selection: list[str]) -> None:
         if not selection:
             self._show_dialog("Falta seleccionar", "Selecciona una foto antes de continuar.")
@@ -1718,6 +1844,38 @@ class RamaMobileApp(MDApp):
             popup.dismiss()
 
     def take_request_photo(self) -> None:
+        if platform == "android":
+            try:
+                from android.permissions import Permission, request_permissions
+                from jnius import JavaException
+            except ImportError as error:
+                self._show_dialog(
+                    "Permiso de cámara no disponible",
+                    f"No se pudo solicitar el permiso de Android: {error}",
+                )
+                return
+            try:
+                request_permissions(
+                    [Permission.CAMERA], self._on_camera_permission_result,
+                )
+            except JavaException as error:
+                self._show_dialog(
+                    "No se pudo solicitar el permiso",
+                    f"Android no pudo solicitar acceso a la cámara: {error}",
+                )
+            return
+        self._open_request_camera()
+
+    def _on_camera_permission_result(self, _permissions, grants) -> None:
+        if len(grants) != 1 or not grants[0]:
+            self._show_dialog(
+                "Permiso de cámara denegado",
+                "Autoriza el uso de la cámara para tomar la foto de la solicitud.",
+            )
+            return
+        Clock.schedule_once(lambda _dt: self._open_request_camera(), 0)
+
+    def _open_request_camera(self) -> None:
         try:
             camera = Camera(
                 play=True, resolution=(1280, 720),

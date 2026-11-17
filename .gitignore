@@ -14,5 +14,7 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 .mypy_cache/
+.buildozer/
+bin/
 
 app/config/email_settings.json

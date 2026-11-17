@@ -1,5 +1,9 @@
+import io
+import tempfile
 import unittest
-from unittest.mock import Mock
+from pathlib import Path
+from types import ModuleType, SimpleNamespace
+from unittest.mock import Mock, patch
 
 from app.main import RamaMobileApp
 from app.request_service import RequestService, WORKERS
@@ -273,6 +277,135 @@ class RequestServiceTests(unittest.TestCase):
 
         self.assertEqual(app.service.get("RM-1048")["status"], "accepted")
         app._notify.assert_called_once_with("RM-1048: aceptada.")
+
+    def test_android_photo_picker_uses_the_system_document_picker(self):
+        android = ModuleType("android")
+        android.activity = Mock()
+        android.mActivity = Mock()
+        intent_class = Mock()
+        intent_class.ACTION_OPEN_DOCUMENT = "open-document"
+        intent_class.CATEGORY_OPENABLE = "openable"
+        intent_class.FLAG_GRANT_READ_URI_PERMISSION = 1
+        intent = intent_class.return_value
+        jnius = ModuleType("jnius")
+        jnius.JavaException = type("JavaException", (Exception,), {})
+        jnius.autoclass = Mock(return_value=intent_class)
+        app = RamaMobileApp()
+
+        with patch.dict("sys.modules", {"android": android, "jnius": jnius}):
+            app._choose_android_request_photo()
+
+        intent_class.assert_called_once_with("open-document")
+        intent.addCategory.assert_called_once_with("openable")
+        intent.setType.assert_called_once_with("image/*")
+        intent.addFlags.assert_called_once_with(1)
+        android.activity.bind.assert_called_once_with(
+            on_activity_result=app._on_android_photo_result,
+        )
+        android.mActivity.startActivityForResult.assert_called_once_with(
+            intent, 48127,
+        )
+
+    def test_android_photo_content_is_copied_into_private_app_storage(self):
+        payload = b"selected image bytes"
+        resolver = Mock()
+        resolver.getType.return_value = "image/png"
+        resolver.openInputStream.return_value = io.BytesIO(payload)
+        android = ModuleType("android")
+        android.mActivity = SimpleNamespace(
+            getContentResolver=Mock(return_value=resolver),
+        )
+
+        class DestinationChannel:
+            def __init__(self, path):
+                self.path = Path(path)
+
+            def transferFrom(self, source, offset, count):
+                chunk = source.read(count)
+                if chunk:
+                    with self.path.open("ab") as destination:
+                        destination.write(chunk)
+                return len(chunk)
+
+        class OutputStream:
+            def __init__(self, path):
+                self.channel = DestinationChannel(path)
+
+            def getChannel(self):
+                return self.channel
+
+            def close(self):
+                pass
+
+        class Channels:
+            @staticmethod
+            def newChannel(stream):
+                return stream
+
+        jnius = ModuleType("jnius")
+        jnius.autoclass = Mock(side_effect={
+            "java.io.FileOutputStream": OutputStream,
+            "java.nio.channels.Channels": Channels,
+        }.get)
+        app = RamaMobileApp()
+
+        with tempfile.TemporaryDirectory() as data_dir:
+            app._user_data_dir = data_dir
+            with patch.dict(
+                "sys.modules", {"android": android, "jnius": jnius},
+            ):
+                image_path = app._copy_android_photo("content://selected")
+            try:
+                self.assertEqual(image_path.suffix, ".png")
+                self.assertEqual(image_path.read_bytes(), payload)
+            finally:
+                image_path.unlink(missing_ok=True)
+
+    def test_android_camera_waits_for_permission_before_opening(self):
+        android = ModuleType("android")
+        android.__path__ = []
+        permissions = ModuleType("android.permissions")
+        permissions.Permission = SimpleNamespace(CAMERA="android.permission.CAMERA")
+        permissions.request_permissions = Mock()
+        android.permissions = permissions
+        jnius = ModuleType("jnius")
+        jnius.JavaException = type("JavaException", (Exception,), {})
+        app = RamaMobileApp()
+        app._show_dialog = Mock()
+        app._open_request_camera = Mock()
+
+        with (
+            patch("app.main.platform", "android"),
+            patch.dict(
+                "sys.modules",
+                {
+                    "android": android,
+                    "android.permissions": permissions,
+                    "jnius": jnius,
+                },
+            ),
+        ):
+            app.take_request_photo()
+
+        permissions.request_permissions.assert_called_once_with(
+            ["android.permission.CAMERA"], app._on_camera_permission_result,
+        )
+        app._on_camera_permission_result(
+            ["android.permission.CAMERA"], [False],
+        )
+        app._show_dialog.assert_called_once_with(
+            "Permiso de cámara denegado",
+            "Autoriza el uso de la cámara para tomar la foto de la solicitud.",
+        )
+        app._open_request_camera.assert_not_called()
+
+        with patch("app.main.Clock.schedule_once") as schedule_once:
+            app._on_camera_permission_result(
+                ["android.permission.CAMERA"], [True],
+            )
+            callback = schedule_once.call_args.args[0]
+            callback(0)
+        app._open_request_camera.assert_called_once()
 
     def test_worker_route_is_ordered_by_neighborhood_and_address(self):
         self.service.transition("RM-1048", "accepted")

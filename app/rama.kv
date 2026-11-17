@@ -9,6 +9,7 @@
         (1, 1, 1, 0)
 
 <MDButtonText>:
+    pos_hint: {"center_x": 0.5, "center_y": 0.5}
     theme_text_color: "Custom"
     text_color:
         (1, 1, 1, 1) if self._button and self._button.style == "filled" else \
@@ -192,7 +193,7 @@
                                 size_hint_x: 1
                                 on_release: app.open_recovery()
                                 MDButtonText:
-                                    text: "Olvídame mi contraseña"
+                                    text: "¿Olvidaste tu clave?"
                                     font_size: dp(12)
 
                 MDBoxLayout:
