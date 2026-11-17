@@ -1853,7 +1853,7 @@ class RamaMobileApp(MDApp):
             "travelmode": "driving",
         }
         if len(locations) > 1:
-            params["waypoints"] = "|".join(locations[:-1])
+            params["waypoints"] = "optimize:true|" + "|".join(locations[:-1])
         webbrowser.open(f"https://www.google.com/maps/dir/?{urlencode(params)}")
 
     def submit_request(self) -> None:
