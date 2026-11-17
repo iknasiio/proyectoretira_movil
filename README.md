@@ -2,6 +2,18 @@
 
 Rama coordina el retiro municipal de ramas y restos de poda acumulados frente a las viviendas. La demo integra registro e inicio de sesión por rol, solicitudes con fotografía, asignación de trabajadores, seguimiento del servicio, un dashboard de estadísticas para administración, persistencia local, notificaciones en pantalla y configuración remota.
 
+## Cumplimiento de la rúbrica
+
+Este proyecto está orientado a la rúbrica de la evaluación final y se estructura para evidenciar los cinco criterios principales:
+
+1. Problema resuelto: la app responde a la necesidad de gestionar residuos de poda en barrios y comunicar órdenes de retiro de forma transparente.
+2. Solución desarrollada: incluye autenticación, registro, flujo de solicitudes, asignación de trabajadores, persistencia, dashboard y manejo de errores.
+3. Metodología de medición: usa un enfoque MJV App con indicadores de volumen de solicitudes, estados, tiempos y carga del equipo.
+4. Resultados y mejora: el dashboard presenta métricas y alertas para identificar cuellos de botella y priorizar mejoras.
+5. Reflexión social y ética: el proyecto considera privacidad, uso responsable de datos y declaración de uso de IA.
+
+La documentación relevante del proyecto vive en [DOCUMENTATION.md](DOCUMENTATION.md), [INFORME_FINAL.md](INFORME_FINAL.md) y [USO_IA.md](USO_IA.md).
+
 ## Ejecutar en Windows
 
 Requisitos: Python 3.11 de 64 bits. Desde la carpeta del proyecto:
