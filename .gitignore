@@ -16,5 +16,8 @@ __pycache__/
 .mypy_cache/
 .buildozer/
 bin/
+/.venv-ios/
+/Rama-ios/
+/dist/
 
 app/config/email_settings.json

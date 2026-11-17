@@ -65,6 +65,13 @@ El APK se genera en `bin/`. El identificador del paquete debe confirmarse
 antes de publicar, porque no se puede cambiar después de crear la ficha en
 Google Play. Para publicar también hay que firmar el AAB con una clave propia.
 
+## Preparar para iPhone
+
+Android usa Buildozer y genera APK/AAB; esos archivos no se pueden instalar en
+iPhone. La guía para generar el proyecto iOS con Kivy-iOS, abrirlo en Xcode y
+probarlo en un dispositivo está en [IOS_SETUP.md](docs/IOS_SETUP.md). Esta
+compilación requiere macOS y Xcode.
+
 ## Componentes y flujo de datos
 
 | Archivo | Responsabilidad |
