@@ -48,38 +48,32 @@ Los indicadores principales que la app puede medir son:
 6. Solicitudes por barrio y zona.
 7. Tendencia de creación y cierre por periodo.
 
-### Cómo se registran
+### Cómo se generan y qué significan
 
-Los datos se registran directamente en la estructura de `RequestService`:
+Para la presentación, `app/demo_data.py` genera registros sintéticos con fecha,
+estado, barrio, trabajador y tiempos simulados. El dashboard usa esa muestra
+para poder practicar la lectura de gráficos y filtrar periodos de 1, 7 y 30
+días. No registra eventos de usuarios ni incorpora estos casos a la persistencia.
 
-- `date` de creación de la solicitud;
-- `status` actual;
-- `worker` asignado;
-- `pending_reason` cuando la solicitud queda pendiente;
-- información de barrio, dirección y cantidad de poda.
-
-El dashboard administrativo usa esos campos para resumir el comportamiento del sistema y comparar periodos de 1, 7 y 30 días.
+`RequestService` mantiene por separado las solicitudes locales reales de la
+sesión de la app, pero el dashboard de presentación no las usa. Por lo tanto,
+los resultados mostrados no permiten medir uso o impacto real.
 
 ### Periodo y evidencia
 
-Para la demo inicial del proyecto, el conjunto de datos base incluye cuatro solicitudes:
+El dashboard usa un conjunto separado de 40 registros sintéticos, distribuidos
+en una ventana móvil de 30 días. Se genera para la presentación y está rotulado
+en pantalla como simulación; no son solicitudes persistidas ni mediciones de
+personas usuarias. Las operaciones reales de la app mantienen sus propios datos
+locales y no se mezclan con esta muestra.
 
-| Solicitud | Estado | Barrio | Trabajador |
-| --- | --- | --- | --- |
-| RM-1048 | Por revisar | Las Flores | - |
-| RM-1047 | Aceptada | Centro | - |
-| RM-1046 | En recolección | Las Flores | Lucía Méndez |
-| RM-1045 | Completada | La Estación | Diego Rojas |
-
-Con esos datos es posible calcular indicadores reales del demo:
-
-- Total de solicitudes: 4
-- Estado más frecuente: 1 en cada categoría observable
-- Barrrios con mayor volumen: Las Flores con 2 solicitudes
-- Solicitudes completadas: 1 de 4 = 25%
-- Carga del equipo visible: Lucía 1 solicitud, Diego 1 solicitud
-
-Estos valores no representan una medición de usuarios reales, sino una evidencia metodológica y verificable de cómo la aplicación recoge y presenta indicadores para la demo académica.
+La muestra permite practicar la lectura de los indicadores: 24 de 40 casos
+aparecen completados (60%), hay 4 pendientes y 3 en cada uno de los otros
+estados. La distribución por barrios, trabajadores y fechas también es
+ficticia. Estos resultados solo demuestran cómo se visualizarían los KPIs;
+no permiten afirmar impacto, uso real ni tiempos reales de atención. Para una
+evaluación real se requiere recolectar eventos observados durante un periodo
+declarado y validado por el equipo.
 
 ## 4. Resultados y propuestas de mejora
 

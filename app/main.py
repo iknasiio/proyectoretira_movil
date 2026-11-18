@@ -48,6 +48,7 @@ from .email_service import (
     send_password_reset_email,
     send_welcome_email,
 )
+from .demo_data import SIMULATED_REQUEST_COUNT, simulated_dashboard_requests
 from .remote_config import (
     DEFAULT_REMOTE_CONFIG,
     DEFAULT_REMOTE_CONFIG_URL,
@@ -211,9 +212,7 @@ class RamaMobileApp(MDApp):
         self.root.ids.nav_bar.opacity = 0
         login = self.root.ids.screen_manager.get_screen("login")
         login.ids.remote_announcement.text = self.remote_config["announcement"]
-        login.ids.remote_config_status.text = (
-            "Configuración local activa · consultando valor remoto…"
-        )
+        login.ids.remote_config_status.text = ""
         Thread(target=self._fetch_remote_config, daemon=True).start()
         self._bind_enter_navigation(
             (login.ids.login_username, login.ids.login_password),
@@ -267,9 +266,7 @@ class RamaMobileApp(MDApp):
         login.ids.remote_announcement.text = (
             self.remote_config["announcement"]
         )
-        login.ids.remote_config_status.text = (
-            "Sin conexión remota · se usan los valores locales."
-        )
+        login.ids.remote_config_status.text = ""
 
     def _notify(self, message: str) -> None:
         notification = MDLabel(
@@ -986,7 +983,7 @@ class RamaMobileApp(MDApp):
         content.clear_widgets()
 
         today = date.today()
-        all_requests = self.service.requests
+        all_requests = simulated_dashboard_requests(today)
         counts = {
             status: sum(item["status"] == status for item in all_requests)
             for status in STATUS_LABELS
@@ -995,9 +992,9 @@ class RamaMobileApp(MDApp):
         completed = counts["completed"]
         completed_percent = round(completed * 100 / total) if total else 0
 
-        now = datetime.now().strftime("%d/%m %H:%M")
         screen.ids.dashboard_data_status.text = (
-            f"Datos locales · actualizado {now}"
+            f"SIMULACIÓN · {SIMULATED_REQUEST_COUNT} registros ficticios; "
+            "no son datos reales."
         )
         for days, button_id in (
             (1, "period_today"),
@@ -1301,7 +1298,7 @@ class RamaMobileApp(MDApp):
         ))
 
         recent = sorted(
-            self.service.requests,
+            all_requests,
             key=lambda item: item.get("date", ""),
             reverse=True,
         )[:6]
