@@ -18,18 +18,23 @@ La aplicación permite:
 
 El proyecto mantiene una separación clara entre capas de presentación, lógica y datos:
 
-- `app/main.py`: vista y coordinación general de la aplicación. Contiene las pantallas, formularios, diálogos, navegación y construcción del dashboard.
+- `app/main.py`: inicialización y coordinación general de la aplicación.
+- `app/ui/auth.py`: inicio de sesión, registro y recuperación de contraseña.
+- `app/ui/dashboard.py`: métricas, gráficas y actualización del dashboard.
+- `app/ui/request_views.py`, `request_actions.py` y `request_photos.py`: presentación y operaciones de solicitudes, separadas por responsabilidad.
+- `app/ui/components.py`, `screens.py` y `kv_loader.py`: componentes comunes, clases de pantalla y carga ordenada de vistas.
+- `app/kv/`: interfaz declarativa Kivy; contiene `components.kv`, `root.kv` y un archivo por pantalla.
 - `app/request_service.py`: núcleo de negocio. Define los roles, validaciones, transiciones de estado, persistencia y reglas de acceso.
-- `app/rama.kv`: archivo de interfaz y definición visual de pantallas.
 - `app/remote_config.py`: carga de configuración remota con validación y fallback local.
-- `app/config/remote_config.json`: copia local de la configuración pública; se publica como `remote_config.json` en la raíz del repositorio remoto.
-- `app/config/email_settings.json`: configuración SMTP local, excluida de Git.
+- `json/remote_config.json`: copia local de la configuración pública; se publica como `remote_config.json` en la raíz del repositorio remoto.
+- `json/email_settings.example.json`: plantilla de configuración SMTP sin credenciales reales.
+- `json/email_settings.json`: configuración SMTP local, excluida de Git; créala a partir de la plantilla y no compartas sus credenciales.
 - `tests/`: pruebas automatizadas.
 
 ### Principios de diseño
 
-- MVC/POO identificables: la lógica de negocio está encapsulada en `RequestService`, mientras las pantallas en `app/main.py` sólo coordinan eventos y actualizaciones visuales.
-- Persistencia segura: cada cambio se guarda mediante archivo temporal antes de reemplazar el JSON principal.
+- MVC/POO identificables: la lógica de negocio está encapsulada en `RequestService`; los controladores de `app/ui/` coordinan eventos y actualizaciones visuales, y las vistas están en `app/kv/`.
+- Persistencia segura: los tres JSON se escriben primero en archivos temporales; si una sustitución falla, se restauran los archivos y el estado en memoria.
 - Manejo de errores: si el archivo está corrupto o la configuración remota falla, la app mantiene funcionamiento local.
 - UX orientada a móvil: los cards, notificaciones y filtros están diseñados para una gestión ágil desde un teléfono.
 
@@ -44,13 +49,13 @@ El proyecto mantiene una separación clara entre capas de presentación, lógica
 
 ## 4. Datos y persistencia
 
-Los datos se almacenan en el directorio privado de la aplicación (`App.user_data_dir`) en un archivo `rama_data.json`. La estructura incluye:
+En escritorio, los datos se pueden inspeccionar en `json/solicitudes.json`, `json/cuentas.json` y `json/trabajadores.json`. En Android/iOS esos tres archivos se guardan en el directorio privado de la aplicación (`App.user_data_dir`). El directorio `json/` local está excluido de Git y Buildozer no lo incluye en el paquete móvil. Al iniciar, la app migra un antiguo `rama_data.json` y lo elimina solo después de guardar correctamente los archivos nuevos.
 
-- `requests`: solicitudes de los ciudadanos;
-- `accounts`: cuentas de ciudadanos y administradores;
-- `workers`: operadores asignados a la recolección.
+- `solicitudes.json`: solicitudes de los ciudadanos;
+- `cuentas.json`: cuentas de ciudadanos y administración;
+- `trabajadores.json`: operadores y credenciales de acceso del equipo.
 
-La clase `RequestService` valida la estructura antes de cargarla y evita sobrescribir datos corruptos.
+Cada archivo tiene una versión de esquema y `RequestService` valida su estructura. Si un archivo falta o está dañado, el inicio reporta el error en vez de reemplazar datos silenciosamente. Los guardados usan archivos temporales y restauran el estado anterior si falla una escritura.
 
 ## 5. Configuración remota
 

@@ -1,6 +1,6 @@
 # Rama | Retiro de poda
 
-Rama coordina el retiro municipal de ramas y restos de poda acumulados frente a las viviendas. La demo integra registro e inicio de sesión por rol, solicitudes con fotografía, asignación de trabajadores, seguimiento del servicio, un dashboard de estadísticas para administración, persistencia local, notificaciones en pantalla y configuración remota.
+Rama coordina el retiro municipal de ramas y restos de poda acumulados frente a las viviendas. La demo integra registro e inicio de sesión por rol, solicitudes con fotografía, asignación de trabajadores, seguimiento del servicio, un dashboard de estadísticas para administración, persistencia local, notificaciones en pantalla, configuración remota y un modo oscuro que recuerda la preferencia.
 
 ## Cumplimiento de la rúbrica
 
@@ -16,13 +16,16 @@ La documentación relevante del proyecto vive en [DOCUMENTATION.md](docs/DOCUMEN
 
 ## Estructura del proyecto
 
-- `app/`: aplicación, interfaz Kivy, servicios y configuración.
+- `app/`: lanzador de la aplicación, servicios y configuración.
+- `app/ui/`: controladores agrupados por responsabilidad y widgets de pantalla.
+- `app/kv/`: interfaz Kivy declarativa, separada del código Python por pantalla.
 - `assets/` y `capturas/`: recursos gráficos y capturas de pantalla.
 - `tests/`: pruebas automatizadas.
 - `docs/`: documentación técnica, informe y declaración de uso de IA.
 - `scripts/`: utilidades de desarrollo.
 - `main.py`: lanzador de la app; `requirements.txt`: dependencias.
-- Los datos de usuario siguen en el directorio privado de Kivy y no se mueven con el código.
+- En escritorio, los datos y archivos de configuración se guardan en `json/` para mantenerlos ordenados; ese directorio está excluido de Git y del paquete móvil.
+- En Android/iOS, los mismos JSON se guardan en el directorio privado de la app.
 
 ## Ejecutar en Windows
 
@@ -76,11 +79,16 @@ compilación requiere macOS y Xcode.
 
 | Archivo | Responsabilidad |
 | --- | --- |
-| `app/main.py` y `main.py` | App y lanzador desde la raíz del proyecto. |
-| `app/rama.kv` | Pantallas de acceso, ciudadano, administración, dashboard de estadísticas y trabajador. |
+| `app/main.py` y `main.py` | Inicialización de la app y lanzador desde la raíz del proyecto. |
+| `app/ui/auth.py` | Inicio de sesión, registro y recuperación de contraseña. |
+| `app/ui/dashboard.py` | Métricas, gráficas y actualización del dashboard. |
+| `app/ui/request_*.py` | Vistas, acciones y selección de fotos de solicitudes. |
+| `app/ui/components.py`, `screens.py` | Componentes visuales compartidos y clases de pantalla. |
+| `app/ui/kv_loader.py` | Carga ordenada de las vistas declarativas. |
+| `app/kv/` | `components.kv`, `root.kv` y un archivo KV por pantalla. |
 | `app/request_service.py` | Reglas de negocio, autenticación de demostración y persistencia JSON. |
 | `app/remote_config.py` | Descarga con tiempo límite y validación de configuración remota. |
-| `app/config/remote_config.json` | Copia local de los valores para la configuración remota. |
+| `json/remote_config.json` | Copia local de los valores para la configuración remota. |
 | `tests/` | Pruebas del flujo de solicitudes, persistencia, correo y configuración remota. |
 
 El recorrido de una solicitud es: formulario Kivy → validación de `RequestService` → escritura JSON atómica → actualización de las vistas por rol. Las fotos se copian al directorio privado de datos de Kivy y su ruta queda asociada a la solicitud.
@@ -95,11 +103,11 @@ El dashboard de administración presenta el resumen, alertas, solicitudes por es
 
 ## Persistencia y modo sin conexión
 
-`RequestService` guarda solicitudes, cuentas registradas y trabajadores en `rama_data.json`, dentro de `App.user_data_dir` (directorio privado de la aplicación). La primera ejecución inicializa datos de demostración; las siguientes cargan el archivo existente. Cada cambio se escribe en un archivo temporal y se reemplaza el anterior al terminar, para reducir el riesgo de dejar un JSON incompleto. Si el archivo está dañado o no se puede escribir, el inicio o la operación falla con un error explícito; no descarta ni reemplaza silenciosamente los datos y revierte el cambio no guardado.
+`RequestService` guarda solicitudes, cuentas y trabajadores en archivos separados dentro de `json/`: `solicitudes.json`, `cuentas.json` y `trabajadores.json` en escritorio. En Android/iOS crea los mismos archivos en el directorio privado de la app. La primera ejecución inicializa datos de demostración; las siguientes cargan los tres archivos. Si encuentra el antiguo `rama_data.json`, lo migra automáticamente y lo elimina solo después de guardar correctamente los nuevos archivos. Cada cambio se prepara en archivos temporales; ante un error de escritura, intenta restaurar los archivos y el estado en memoria. Si falta un archivo o el JSON está dañado, el inicio falla con un error explícito en vez de reemplazar los datos silenciosamente.
 
 Las operaciones de la demo —registro, acceso y seguimiento de solicitudes— no necesitan Internet. Se elige JSON frente a una base de datos porque el volumen es pequeño y la entrega es una demo local de un solo dispositivo: es simple de inspeccionar, respaldar y explicar. JSON no ofrece consultas relacionales, control de concurrencia, transacciones multiusuario ni sincronización entre dispositivos; para el servicio municipal real convendría una API con una base de datos central.
 
-La demo es solo académica. Los datos se guardan en el dispositivo y las contraseñas de demostración no deben considerarse protegidas ni usarse con datos reales. Reinstalar o borrar los datos de la app puede eliminar el archivo local.
+La demo es solo académica. Los JSON de escritorio contienen datos modificables y están excluidos de Git; no compartas esos archivos. Las contraseñas de demostración no deben considerarse protegidas ni usarse con datos reales. En escritorio, elimina los tres archivos dentro de `json/` para reiniciar la demo; en móvil, borrar los datos de la app puede eliminar los archivos privados.
 
 ## Notificaciones
 
@@ -107,9 +115,9 @@ La interfaz muestra un aviso local temporal sobre la pantalla cuando se envía o
 
 ## Configuración remota y valor predeterminado
 
-Al iniciar, un hilo en segundo plano consulta `remote_config.json` en la rama `main` del repositorio. La configuración actualiza el texto de bienvenida y el municipio utilizado para construir el recorrido de Google Maps. La copia del proyecto está en `app/config/remote_config.json`; la app consulta la URL publicada en la raíz del repositorio. `app/remote_config.py` aplica un tiempo límite de cuatro segundos y valida los campos antes de usarlos; si falta Internet, el servidor falla o el JSON no es válido, conserva los valores de `DEFAULT_REMOTE_CONFIG` y muestra que está usando la configuración local. No bloquea el acceso ni la gestión de solicitudes.
+Al iniciar, un hilo en segundo plano consulta `remote_config.json` en la rama `main` del repositorio. La configuración actualiza el texto de bienvenida y el municipio utilizado para construir el recorrido de Google Maps. La copia del proyecto está en `json/remote_config.json`; la app consulta la URL publicada en la raíz del repositorio. `app/remote_config.py` aplica un tiempo límite de cuatro segundos y valida los campos antes de usarlos; si falta Internet, el servidor falla o el JSON no es válido, conserva los valores de `DEFAULT_REMOTE_CONFIG` y muestra que está usando la configuración local. No bloquea el acceso ni la gestión de solicitudes.
 
-La configuración SMTP local se guarda en `app/config/email_settings.json`, a partir de `app/config/email_settings.example.json`. El archivo local está excluido de Git; no compartas ni publiques sus credenciales.
+La configuración SMTP local se guarda en `json/email_settings.json`. Puedes partir de `json/email_settings.example.json` y completar tus datos; el archivo local está excluido de Git, así que no compartas ni publiques sus credenciales. Para la configuración remota, `remote_config.json` en la raíz contiene los valores públicos usados por la URL predeterminada.
 
 Para probar otra URL sin cambiar el código (PowerShell):
 
@@ -118,7 +126,7 @@ $env:RAMA_REMOTE_CONFIG_URL = "https://tu-servidor/config.json"
 python main.py
 ```
 
-La respuesta debe ser un objeto JSON; `municipality` y `announcement` deben ser textos no vacíos. Los campos omitidos conservan su valor predeterminado. Para que la URL predeterminada lea los cambios publicados, hay que publicar el contenido de `app/config/remote_config.json` como `remote_config.json` en la raíz de la rama `main`; los cambios que solo están en el equipo todavía no son accesibles desde Internet.
+La respuesta debe ser un objeto JSON; `municipality` y `announcement` deben ser textos no vacíos. Los campos omitidos conservan su valor predeterminado. La URL predeterminada lee `remote_config.json` desde la raíz de la rama `main`; conserva ese archivo sincronizado con `json/remote_config.json` cuando actualices los valores públicos.
 
 ## Flujo sugerido para la demostración
 
@@ -142,7 +150,7 @@ Las cuentas incluidas son de demostración:
 | Trabajador | `diego` | `diego123` |
 | Trabajador | `mateo` | `mateo123` |
 
-El sistema trae solicitudes de ejemplo para recorrer las etapas. Los cambios se conservan entre ejecuciones en el mismo dispositivo; para reiniciar una demo, cierra la app y elimina únicamente `rama_data.json` de su directorio privado de datos.
+El sistema trae solicitudes de ejemplo para recorrer las etapas. Los cambios se conservan entre ejecuciones; para reiniciar una demo, cierra la app y elimina los tres JSON de `json/` (escritorio) o los archivos privados de datos (móvil).
 
 ## Guía breve para la defensa
 

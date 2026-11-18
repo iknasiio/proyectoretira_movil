@@ -1,0 +1,97 @@
+#:import dp kivy.metrics.dp
+
+<RecoveryScreen>:
+    MDBoxLayout:
+        orientation: "vertical"
+        ScrollView:
+            do_scroll_x: False
+            bar_width: dp(3)
+            MDBoxLayout:
+                orientation: "vertical"
+                size_hint_y: None
+                height: self.minimum_height
+                padding: dp(20), dp(24), dp(20), dp(24)
+                spacing: dp(16)
+
+                MDLabel:
+                    text: "Recuperar contraseña"
+                    size_hint_y: None
+                    height: dp(34)
+                    font_size: dp(22)
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: app.accent_text_color
+
+                MDLabel:
+                    id: recovery_email
+                    text: "Ingresa el código enviado a tu correo."
+                    size_hint_y: None
+                    height: dp(48)
+                    font_size: dp(14)
+                    theme_text_color: "Custom"
+                    text_color: app.secondary_text_color
+                    text_size: self.width, None
+                    valign: "top"
+
+                MDCard:
+                    style: "outlined"
+                    orientation: "vertical"
+                    size_hint_y: None
+                    height: dp(318)
+                    padding: dp(16)
+                    spacing: dp(12)
+
+                    MDTextField:
+                        id: recovery_code
+                        mode: "outlined"
+                        size_hint_y: None
+                        height: dp(58)
+                        input_filter: "int"
+                        MDTextFieldHintText:
+                            text: "Código de 6 dígitos"
+
+                    MDTextField:
+                        id: recovery_password
+                        mode: "outlined"
+                        size_hint_y: None
+                        height: dp(58)
+                        password: True
+                        MDTextFieldHintText:
+                            text: "Nueva contraseña"
+
+                    MDTextField:
+                        id: recovery_confirm_password
+                        mode: "outlined"
+                        size_hint_y: None
+                        height: dp(58)
+                        password: True
+                        MDTextFieldHintText:
+                            text: "Confirmar nueva contraseña"
+
+                    MDLabel:
+                        text: "La contraseña debe tener al menos 6 caracteres."
+                        size_hint_y: None
+                        height: dp(26)
+                        font_size: dp(12)
+                        theme_text_color: "Custom"
+                        text_color: app.secondary_text_color
+
+                MDButton:
+                    style: "filled"
+                    size_hint_x: 1
+                    size_hint_y: None
+                    height: dp(48)
+                    on_release: app.confirm_password_reset()
+                    MDButtonText:
+                        text: "Actualizar contraseña"
+                        font_size: dp(15)
+
+                MDButton:
+                    style: "text"
+                    size_hint_x: 1
+                    size_hint_y: None
+                    height: dp(44)
+                    on_release: app.cancel_password_reset()
+                    MDButtonText:
+                        text: "Cancelar y volver"
+                        font_size: dp(14)

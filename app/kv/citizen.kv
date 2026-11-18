@@ -1,0 +1,240 @@
+#:import dp kivy.metrics.dp
+#:import SpinnerOption kivy.uix.spinner.SpinnerOption
+
+<SpinnerOption>:
+    size_hint_y: None
+    height: dp(56)
+    background_normal: ""
+    background_down: ""
+    background_color: app.soft_surface_color if self.state == "down" else app.surface_color
+    color: app.primary_text_color
+    font_size: dp(15)
+    bold: True
+    halign: "left"
+    valign: "middle"
+    padding: dp(20), 0
+    canvas.after:
+        Color:
+            rgba: app.soft_surface_color
+        Line:
+            points: self.x, self.y, self.right, self.y
+            width: 1
+
+<CitizenScreen>:
+    MDBoxLayout:
+        orientation: "vertical"
+        ScrollView:
+            id: citizen_scroll
+            do_scroll_x: False
+            bar_width: dp(3)
+            MDBoxLayout:
+                orientation: "vertical"
+                size_hint_y: None
+                height: self.minimum_height
+                padding: dp(17), dp(14), dp(17), dp(20)
+                spacing: dp(10)
+
+                MDLabel:
+                    text: "PORTAL CIUDADANO"
+                    size_hint_y: None
+                    height: dp(22)
+                    font_size: dp(14)
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: app.secondary_text_color
+
+                MDLabel:
+                    text: "Solicita el retiro"
+                    size_hint_y: None
+                    height: dp(34)
+                    font_size: dp(23)
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: app.primary_text_color
+
+                MDLabel:
+                    text: "Cuéntanos dónde están las ramas y el equipo municipal coordinará su recolección."
+                    size_hint_y: None
+                    height: dp(56)
+                    font_size: dp(15)
+                    theme_text_color: "Custom"
+                    text_color: app.secondary_text_color
+                    text_size: self.width, None
+                    valign: "top"
+
+                MDCard:
+                    style: "outlined"
+                    orientation: "vertical"
+                    size_hint_y: None
+                    height: self.minimum_height
+                    padding: dp(12), dp(8), dp(12), dp(12)
+                    spacing: dp(6)
+
+                    MDLabel:
+                        text: "Nueva solicitud"
+                        size_hint_y: None
+                        height: dp(32)
+                        font_size: dp(17)
+                        bold: True
+                        theme_text_color: "Custom"
+                        text_color: app.primary_text_color
+
+                    MDTextField:
+                        id: full_name
+                        mode: "outlined"
+                        size_hint_y: None
+                        height: dp(64)
+                        font_size: dp(16)
+                        text: "Elena Martínez"
+                        MDTextFieldHintText:
+                            text: "Nombre completo"
+
+                    MDTextField:
+                        id: phone
+                        mode: "outlined"
+                        size_hint_y: None
+                        height: dp(64)
+                        font_size: dp(16)
+                        text: "555010204"
+                        MDTextFieldHintText:
+                            text: "Teléfono de contacto"
+
+                    MDTextField:
+                        id: address
+                        mode: "outlined"
+                        size_hint_y: None
+                        height: dp(64)
+                        font_size: dp(16)
+                        MDTextFieldHintText:
+                            text: "Dirección y número"
+
+                    MDTextField:
+                        id: neighborhood
+                        mode: "outlined"
+                        size_hint_y: None
+                        height: dp(64)
+                        font_size: dp(16)
+                        MDTextFieldHintText:
+                            text: "Colonia o barrio"
+
+                    MDLabel:
+                        text: "Cantidad aproximada de ramas"
+                        size_hint_y: None
+                        height: dp(22)
+                        font_size: dp(14)
+                        bold: True
+                        theme_text_color: "Custom"
+                        text_color: app.primary_text_color
+
+                    Spinner:
+                        id: quantity
+                        text: "▾  Selecciona la cantidad"
+                        values: ("1 montón", "2 montones", "3 montones", "Más de 3 montones")
+                        size_hint_y: None
+                        height: dp(58)
+                        background_normal: ""
+                        background_down: ""
+                        background_color: (0.20, 0.39, 0.28, 1) if app.dark_mode else (0.09, 0.24, 0.19, 1)
+                        color: 1, 1, 1, 1
+                        font_size: dp(16)
+                        bold: True
+
+                    MDTextField:
+                        id: details
+                        mode: "outlined"
+                        size_hint_y: None
+                        height: dp(86)
+                        multiline: False
+                        font_size: dp(16)
+                        MDTextFieldHintText:
+                            text: "Referencia del lugar (opcional)"
+
+                    MDLabel:
+                        id: photo_status
+                        size_hint_y: None
+                        height: dp(24)
+                        text: "Foto obligatoria: elige o toma una foto."
+                        font_size: dp(13)
+                        theme_text_color: "Custom"
+                        text_color: app.secondary_text_color
+
+                    MDCard:
+                        id: photo_preview_card
+                        style: "outlined"
+                        size_hint_y: None
+                        height: 0
+                        padding: dp(6)
+                        opacity: 0
+                        disabled: True
+                        Image:
+                            id: photo_preview
+                            source: ""
+                            allow_stretch: True
+                            keep_ratio: True
+                            fit_mode: "contain"
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        size_hint_y: None
+                        height: dp(44)
+                        spacing: dp(8)
+
+                        MDButton:
+                            style: "tonal"
+                            size_hint_x: 1
+                            on_release: app.choose_request_photo()
+                            MDButtonText:
+                                text: "Elegir foto"
+                                font_size: dp(13)
+
+                        MDButton:
+                            style: "tonal"
+                            size_hint_x: 1
+                            on_release: app.take_request_photo()
+                            MDButtonText:
+                                text: "Tomar foto"
+                                font_size: dp(13)
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        size_hint_y: None
+                        height: dp(48)
+                        spacing: dp(8)
+
+                        MDButton:
+                            id: submit_request_button
+                            style: "filled"
+                            size_hint_x: 1.4
+                            on_release: app.submit_request()
+                            MDButtonText:
+                                id: submit_request_button_text
+                                text: "Enviar solicitud"
+                                font_size: dp(14)
+
+                        MDButton:
+                            id: cancel_edit_button
+                            style: "text"
+                            size_hint_x: 1
+                            disabled: True
+                            opacity: 0
+                            on_release: app.cancel_edit_request()
+                            MDButtonText:
+                                text: "Cancelar edición"
+                                font_size: dp(12)
+
+                MDLabel:
+                    id: citizen_count
+                    text: "Mis solicitudes"
+                    size_hint_y: None
+                    height: dp(32)
+                    font_size: dp(17)
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: app.primary_text_color
+
+                MDBoxLayout:
+                    id: citizen_requests
+                    orientation: "vertical"
+                    size_hint_y: None
+                    height: self.minimum_height
+                    spacing: dp(8)

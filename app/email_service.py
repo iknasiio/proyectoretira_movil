@@ -4,9 +4,9 @@ La configuración se lee, en este orden, de:
 1. Variables de entorno: RAMA_SMTP_HOST, RAMA_SMTP_PORT, RAMA_SMTP_USER,
    RAMA_SMTP_PASSWORD, RAMA_SMTP_FROM (opcional) y RAMA_SMTP_SECURITY
    ("starttls" por defecto, o "ssl").
-2. Un archivo ``config/email_settings.json`` junto a este módulo (ver
-   ``config/email_settings.example.json``). Ese archivo está en .gitignore
-   para no subir credenciales al repositorio.
+2. Un archivo ``json/email_settings.json`` en la carpeta general de JSON
+   del proyecto. Ese archivo está en .gitignore para no subir credenciales
+   al repositorio.
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ from html import escape
 from pathlib import Path
 
 APP_NAME = "Rama | Retiro de poda"
-SETTINGS_FILE = Path(__file__).with_name("config") / "email_settings.json"
+SETTINGS_FILE = Path(__file__).resolve().parent.parent / "json" / "email_settings.json"
 SMTP_TIMEOUT_SECONDS = 15
 
 

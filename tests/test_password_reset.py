@@ -49,13 +49,14 @@ class PasswordResetTests(unittest.TestCase):
 
     def test_new_password_persists_on_disk(self):
         with tempfile.TemporaryDirectory() as folder:
-            path = Path(folder) / "data.json"
-            service = RequestService(path)
+            data_dir = Path(folder)
+            service = RequestService(data_dir=data_dir)
             reset = service.create_password_reset("lucia")  # trabajadora
             service.reset_password("lucia", reset["code"], "nuevaclave")
-            restored = RequestService(path)
+            restored = RequestService(data_dir=data_dir)
             self.assertIsNotNone(restored.authenticate("lucia", "nuevaclave"))
-            self.assertNotIn("code", json.loads(path.read_text()))
+            for path in restored.data_files.values():
+                self.assertNotIn("code", json.loads(path.read_text()))
 
     def test_short_password_is_rejected(self):
         reset = self.service.create_password_reset("elena")

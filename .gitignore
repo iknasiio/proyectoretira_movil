@@ -20,4 +20,7 @@ bin/
 /Rama-ios/
 /dist/
 
-app/config/email_settings.json
+/json/email_settings.json
+/json/cuentas.json
+/json/solicitudes.json
+/json/trabajadores.json

@@ -16,7 +16,7 @@ class RequestServiceTests(unittest.TestCase):
     def test_new_request_can_be_accepted_assigned_and_completed(self):
         request = self.service.create(
             name="Ana Pérez",
-            phone="5551234567",
+            phone="555123456",
             address="Calle Arce 18",
             neighborhood="Centro",
             quantity="2 montones",
@@ -69,7 +69,7 @@ class RequestServiceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "foto"):
             self.service.create(
                 name="Ana Pérez",
-                phone="5551234567",
+                phone="555123456",
                 address="Calle Arce 18",
                 neighborhood="Centro",
                 quantity="1 montón",
@@ -124,7 +124,7 @@ class RequestServiceTests(unittest.TestCase):
         worker = self.service.authenticate("lucia", "lucia123")
 
         self.assertEqual(citizen["name"], "Elena Martínez")
-        self.assertEqual(citizen["phone"], "555 010 2048")
+        self.assertEqual(citizen["phone"], "555010204")
         self.assertEqual(citizen["role"], "citizen")
         self.assertEqual(administrator["role"], "admin")
         self.assertEqual(worker["role"], "worker")
@@ -136,7 +136,7 @@ class RequestServiceTests(unittest.TestCase):
             password="sofia123",
             name="Sofía Ramírez",
             email="sofia@example.com",
-            phone="555 010 2099",
+            phone="555010209",
         )
 
         self.assertEqual(account["role"], "citizen")
@@ -158,20 +158,32 @@ class RequestServiceTests(unittest.TestCase):
                 password="newpassword",
                 name="Elena Another",
                 email="elena2@example.com",
-                phone="555 010 2000",
+                phone="555010200",
             )
+
+    def test_registration_requires_phone_with_exactly_nine_digits(self):
+        for invalid_phone in ("555ABC123", "55501020", "5550102099"):
+            with self.subTest(phone=invalid_phone):
+                with self.assertRaises(ValueError):
+                    self.service.register_account(
+                        username="telefono-prueba",
+                        password="prueba123",
+                        name="Prueba Teléfono",
+                        email="prueba@example.com",
+                        phone=invalid_phone,
+                    )
 
     def test_admin_can_create_worker_and_worker_can_authenticate(self):
         worker = self.service.create_worker(
             username="  sofia ",
             name="Sofía Pérez",
             password="ramas123",
-            phone="555 010 2099",
+            phone="555010209",
         )
 
         self.assertEqual(worker["username"], "sofia")
         self.assertEqual(self.service.authenticate("SOFIA", "ramas123")["name"], "Sofía Pérez")
-        self.assertEqual(self.service.authenticate("SOFIA", "ramas123")["phone"], "555 010 2099")
+        self.assertEqual(self.service.authenticate("SOFIA", "ramas123")["phone"], "555010209")
         self.assertIn("Sofía Pérez", self.service.worker_names)
 
     def test_editing_worker_updates_credentials_and_existing_assignments(self):
@@ -183,7 +195,7 @@ class RequestServiceTests(unittest.TestCase):
             username="lucia-m",
             name="Lucía Méndez Rojas",
             password="nuevo123",
-            phone="555 010 2999",
+            phone="555010299",
         )
 
         self.assertIsNone(self.service.authenticate("lucia", "lucia123"))
@@ -193,7 +205,7 @@ class RequestServiceTests(unittest.TestCase):
         )
         self.assertEqual(
             self.service.authenticate("lucia-m", "nuevo123")["phone"],
-            "555 010 2999",
+            "555010299",
         )
         self.assertEqual(self.service.get("RM-1048")["worker"], "Lucía Méndez Rojas")
         self.assertEqual(
@@ -243,7 +255,7 @@ class RequestServiceTests(unittest.TestCase):
         request = {
             "id": "RM-2000",
             "name": "Ana Pérez",
-            "phone": "5551234567",
+            "phone": "555123456",
             "address": "Calle Falsa 123",
             "neighborhood": "Centro",
             "quantity": "1 montón",
@@ -375,7 +387,7 @@ class RequestServiceTests(unittest.TestCase):
         app._open_request_camera = Mock()
 
         with (
-            patch("app.main.platform", "android"),
+            patch("app.ui.request_photos.platform", "android"),
             patch.dict(
                 "sys.modules",
                 {
@@ -399,7 +411,7 @@ class RequestServiceTests(unittest.TestCase):
         )
         app._open_request_camera.assert_not_called()
 
-        with patch("app.main.Clock.schedule_once") as schedule_once:
+        with patch("app.ui.request_photos.Clock.schedule_once") as schedule_once:
             app._on_camera_permission_result(
                 ["android.permission.CAMERA"], [True],
             )

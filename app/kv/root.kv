@@ -1,0 +1,80 @@
+#:import dp kivy.metrics.dp
+
+<RamaRoot>:
+    md_bg_color: app.page_color
+    MDBoxLayout:
+        orientation: "vertical"
+        spacing: 0
+
+        MDBoxLayout:
+            id: top_app_bar
+            orientation: "horizontal"
+            size_hint_y: None
+            padding: 0
+            spacing: dp(4)
+            md_bg_color: app.surface_color
+            height: self.width * 325 / 1024
+            opacity: 1
+            Image:
+                source: app.asset_path("assets/ecoramas_logo_dark.png" if app.dark_mode else "assets/ecoramas_logo.png")
+                fit_mode: "contain"
+                size_hint_x: 1
+
+            MDIconButton:
+                id: theme_toggle
+                icon: "leaf"
+                style: "tonal"
+                theme_bg_color: "Custom"
+                md_bg_color: app.soft_surface_color
+                theme_icon_color: "Custom"
+                icon_color: app.accent_text_color
+                size_hint: None, None
+                size: dp(42), dp(42)
+                on_release: app.toggle_dark_mode()
+
+        ScreenManager:
+            id: screen_manager
+
+            LoginScreen:
+                name: "login"
+
+            RecoveryScreen:
+                name: "recovery"
+
+            CitizenScreen:
+                name: "citizen"
+
+            AdminScreen:
+                name: "admin"
+
+            DashboardScreen:
+                name: "dashboard"
+
+            WorkerScreen:
+                name: "worker"
+
+        MDBoxLayout:
+            id: nav_bar
+            size_hint_y: None
+            height: dp(64)
+            padding: dp(8), dp(7)
+            spacing: dp(5)
+            md_bg_color: app.surface_color
+
+            MDLabel:
+                id: session_user
+                text: ""
+                font_size: dp(15)
+                bold: True
+                theme_text_color: "Custom"
+                text_color: app.accent_text_color
+
+            MDButton:
+                id: logout_button
+                style: "tonal"
+                size_hint_x: None
+                width: dp(122)
+                on_release: app.sign_out()
+                MDButtonText:
+                    text: "Cerrar sesión"
+                    font_size: dp(14)

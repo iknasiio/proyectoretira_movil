@@ -1,0 +1,114 @@
+#:import dp kivy.metrics.dp
+
+<LoginScreen>:
+    MDBoxLayout:
+        orientation: "vertical"
+        ScrollView:
+            do_scroll_x: False
+            bar_width: dp(3)
+            MDBoxLayout:
+                orientation: "vertical"
+                size_hint_y: None
+                height: max(self.minimum_height, self.parent.height)
+
+                MDBoxLayout:
+                    orientation: "vertical"
+                    size_hint_y: None
+                    height: self.minimum_height
+                    padding: dp(20), dp(0), dp(20), dp(12)
+                    spacing: dp(10)
+
+                    MDBoxLayout:
+                        size_hint_y: None
+                        height: dp(64)
+
+                    MDLabel:
+                        id: remote_announcement
+                        text: "Solicita el retiro municipal de ramas y restos de poda."
+                        size_hint_y: None
+                        height: dp(44)
+                        font_size: dp(15)
+                        theme_text_color: "Custom"
+                        text_color: app.accent_text_color
+                        text_size: self.width, None
+                        valign: "top"
+
+                    MDLabel:
+                        id: remote_config_status
+                        text: ""
+                        size_hint_y: None
+                        height: dp(22)
+                        font_size: dp(12)
+                        theme_text_color: "Custom"
+                        text_color: app.secondary_text_color
+
+                    MDCard:
+                        style: "outlined"
+                        orientation: "vertical"
+                        size_hint_y: None
+                        height: dp(300)
+                        padding: dp(16)
+                        spacing: dp(10)
+
+                        MDLabel:
+                            text: "Acceso al sistema"
+                            size_hint_y: None
+                            height: dp(28)
+                            font_size: dp(17)
+                            bold: True
+                            theme_text_color: "Custom"
+                            text_color: app.primary_text_color
+
+                        MDTextField:
+                            id: login_username
+                            mode: "outlined"
+                            size_hint_y: None
+                            height: dp(58)
+                            font_size: dp(16)
+                            MDTextFieldHintText:
+                                text: "Usuario"
+
+                        MDTextField:
+                            id: login_password
+                            mode: "outlined"
+                            size_hint_y: None
+                            height: dp(58)
+                            font_size: dp(16)
+                            password: True
+                            MDTextFieldHintText:
+                                text: "Contraseña"
+
+                        MDButton:
+                            style: "filled"
+                            size_hint_x: 1
+                            size_hint_y: None
+                            height: dp(48)
+                            on_release: app.sign_in()
+                            MDButtonText:
+                                text: "Ingresar"
+                                font_size: dp(15)
+
+                        MDBoxLayout:
+                            orientation: "horizontal"
+                            size_hint_y: None
+                            height: dp(36)
+                            spacing: dp(8)
+
+                            MDButton:
+                                style: "text"
+                                size_hint_x: 1
+                                on_release: app.open_register()
+                                MDButtonText:
+                                    text: "Registrar cuenta"
+                                    font_size: dp(12)
+
+                            MDButton:
+                                style: "text"
+                                size_hint_x: 1
+                                on_release: app.open_recovery()
+                                MDButtonText:
+                                    text: "¿Olvidaste tu clave?"
+                                    font_size: dp(12)
+
+                MDBoxLayout:
+                    size_hint_y: 1

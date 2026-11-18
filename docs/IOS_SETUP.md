@@ -32,7 +32,7 @@ El script compila Python, Kivy y Pillow con Kivy-iOS, instala las dependencias
 Python puras de `requirements-ios.txt` y crea
 `~/Rama-ios-build/Rama-ios/Rama.xcodeproj`. El código fuente se copia a una
 carpeta aislada de preparación para no incluir las pruebas, el entorno virtual
-ni los artefactos de Android. También excluye `app/config/email_settings.json`,
+ni los artefactos de Android. También excluye `json/email_settings.json`,
 que puede contener credenciales SMTP locales y nunca debe empaquetarse dentro
 de una app móvil.
 

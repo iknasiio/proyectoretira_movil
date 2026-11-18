@@ -1,0 +1,137 @@
+#:import dp kivy.metrics.dp
+
+<AdminScreen>:
+    MDBoxLayout:
+        orientation: "vertical"
+        ScrollView:
+            do_scroll_x: False
+            bar_width: dp(3)
+            MDBoxLayout:
+                orientation: "vertical"
+                size_hint_y: None
+                height: self.minimum_height
+                padding: dp(17), dp(14), dp(17), dp(20)
+                spacing: dp(10)
+
+                MDLabel:
+                    text: "CENTRO DE OPERACIONES"
+                    size_hint_y: None
+                    height: dp(22)
+                    font_size: dp(14)
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: app.secondary_text_color
+
+                MDLabel:
+                    text: "Solicitudes"
+                    size_hint_y: None
+                    height: dp(34)
+                    font_size: dp(23)
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: app.primary_text_color
+
+                MDLabel:
+                    text: "Revisa los retiros, acepta solicitudes y asigna al equipo."
+                    size_hint_y: None
+                    height: dp(45)
+                    font_size: dp(15)
+                    theme_text_color: "Custom"
+                    text_color: app.secondary_text_color
+                    text_size: self.width, None
+                    valign: "top"
+
+                MDCard:
+                    style: "filled"
+                    orientation: "horizontal"
+                    size_hint_y: None
+                    height: dp(88)
+                    padding: dp(12)
+                    spacing: dp(8)
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        MDLabel:
+                            id: pending_count
+                            text: "0"
+                            font_size: dp(20)
+                            bold: True
+                            theme_text_color: "Custom"
+                            text_color: app.accent_text_color
+                        MDLabel:
+                            text: "Por revisar"
+                            font_size: dp(14)
+                            theme_text_color: "Custom"
+                            text_color: app.secondary_text_color
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        MDLabel:
+                            id: assign_count
+                            text: "0"
+                            font_size: dp(20)
+                            bold: True
+                            theme_text_color: "Custom"
+                            text_color: app.accent_text_color
+                        MDLabel:
+                            text: "Por asignar"
+                            font_size: dp(14)
+                            theme_text_color: "Custom"
+                            text_color: app.secondary_text_color
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        MDLabel:
+                            id: active_count
+                            text: "0"
+                            font_size: dp(20)
+                            bold: True
+                            theme_text_color: "Custom"
+                            text_color: app.accent_text_color
+                        MDLabel:
+                            text: "En proceso"
+                            font_size: dp(14)
+                            theme_text_color: "Custom"
+                            text_color: app.secondary_text_color
+
+                MDButton:
+                    style: "filled"
+                    size_hint_x: 1
+                    size_hint_y: None
+                    height: dp(50)
+                    on_release: app.open_dashboard()
+                    MDButtonText:
+                        text: "Estadísticas"
+                        font_size: dp(14)
+
+                MDBoxLayout:
+                    orientation: "horizontal"
+                    size_hint_y: None
+                    height: dp(44)
+                    spacing: dp(8)
+                    MDLabel:
+                        size_hint_x: 1
+                        text: "Equipo de trabajo"
+                        font_size: dp(17)
+                        bold: True
+                        theme_text_color: "Custom"
+                        text_color: app.primary_text_color
+                    MDButton:
+                        style: "tonal"
+                        size_hint_x: None
+                        width: dp(178)
+                        on_release: app._show_worker_dialog()
+                        MDButtonText:
+                            text: "Agregar trabajador"
+                            font_size: dp(13)
+
+                MDBoxLayout:
+                    id: admin_workers
+                    orientation: "vertical"
+                    size_hint_y: None
+                    height: self.minimum_height
+                    spacing: dp(8)
+
+                MDBoxLayout:
+                    id: admin_requests
+                    orientation: "vertical"
+                    size_hint_y: None
+                    height: self.minimum_height
+                    spacing: dp(8)
